@@ -186,14 +186,18 @@ class Poster:
     # --- the published bundle ----------------------------------------------
 
     def publish(self, thread_ts, *, summary, pdf_path=None, dossier_text="",
-                script_text="", business_name=""):
+                script_text="", business_name="", force=False):
         """Post the three artefacts into one thread, once.
 
         Order matters: the PDF goes first so that if a later call fails, the
         thread already carries the artefact the closer most needs, and the
         idempotency check will stop a retry from duplicating it.
         """
-        if self.already_posted(thread_ts):
+        # `force` is for a deliberate regeneration -- the artefacts improved
+        # and the operator wants them delivered again. Off by default, never
+        # set by the schedule, because the guard it bypasses is the only thing
+        # standing between a re-run and a duplicated thread.
+        if not force and self.already_posted(thread_ts):
             return {"status": "skipped", "reason": "bot already replied in "
                                                    "this thread",
                     "planned": self.planned}

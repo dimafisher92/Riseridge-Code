@@ -19,7 +19,11 @@ import urllib.request
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/122.0 Safari/537.36")
-TIMEOUT = 25
+# Deliberately short. A throttled or silently-dropped request is the
+# common failure here, and 13 searches each waiting 25s across two
+# endpoints is over ten minutes of hanging sockets -- enough to run a
+# job into a runner timeout.
+TIMEOUT = 8
 
 ENDPOINTS = (
     "https://html.duckduckgo.com/html/?q=%s",
