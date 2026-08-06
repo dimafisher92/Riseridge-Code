@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       post:
-        description: "Write to the prospect's Slack thread (otherwise dry run)"
+        description: "Deliver artefacts into the lead's thread (otherwise dry run)"
         type: boolean
         default: false
       apply:
@@ -57,20 +57,27 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          # Until posting is armed, artefacts are delivered to this internal
-          # Slack channel. They cannot be delivered as a build artifact or in
-          # the job log: this repository is PUBLIC, and both are world-readable
-          # there. Prospect names, emails and domains must never reach either.
-          RR_REVIEW_CHANNEL: ${{ secrets.RR_REVIEW_CHANNEL }}
-          # Posting to a prospect thread needs BOTH this and --post. Scheduled
-          # runs never pass --post, so setting this alone still writes nothing:
-          # the bot cannot start posting because a secret was added by accident.
-          RR_POSTING_ARMED: ${{ secrets.RR_POSTING_ARMED }}
+          # No RR_POSTING_ARMED here on purpose. That switch guards a channel
+          # the prospect can see; #sales-pipeline is private and internal, so
+          # requiring it would guard against nothing. Delivery is controlled by
+          # --post alone, below.
+          #
+          # Artefacts reach the closer through Slack or not at all: this
+          # repository is PUBLIC, so the job log and any build artifact are
+          # world-readable and must never carry prospect data.
         shell: bash
         run: |
           set -euo pipefail
           ARGS="--max-age-hours ${{ github.event.inputs.max_age_hours || '48' }}"
-          if [ "${{ github.event.inputs.post }}" = "true" ]; then ARGS="$ARGS --post"; fi
+          # Scheduled runs deliver. #sales-pipeline is internal, so the lead's
+          # thread is where the closer reads these; a schedule that built the
+          # artefacts and discarded them with the runner would be pointless.
+          # A manual dispatch has to opt in, so a hand-run stays a dry run by
+          # default.
+          if [ "${{ github.event_name }}" = "schedule" ] \
+             || [ "${{ github.event.inputs.post }}" = "true" ]; then
+            ARGS="$ARGS --post"
+          fi
           # Scheduled runs always create the Site Explorer project. The
           # operator authorised exactly this (2026-08-04: one project per
           # booked prospect), and without it traffic, authority, position

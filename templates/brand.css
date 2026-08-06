@@ -153,3 +153,8 @@ tr.self td { background: var(--ivory); font-weight: 600; }
 .cover .rr-mark { width: 104px; height: 104px; margin-bottom: 0.62in; }
 .cover .rr-back { fill: var(--ivory); }
 .cover .rr-est  { fill: #8fa295; }
+
+/* Provenance note under a table: present but subordinate to the
+   figures it qualifies. */
+.fine { font-size: 8.5pt; line-height: 1.45; color: #6b6555;
+        margin-top: 6pt; }

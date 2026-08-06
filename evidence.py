@@ -24,7 +24,9 @@ SECTION_REQUIREMENTS = {
     "paid": ("paid.estimated_monthly_spend_usd", "paid.paid_keywords",
              "paid.landing_pages"),
     "competitors": ("competitors",),
-    "ai_visibility": ("ai_visibility.platforms",),
+    # Either method populates the section: engine rows from the API path,
+    # question rows from the keyless open-source path.
+    "ai_visibility": ("ai_visibility.platforms", "ai_visibility.topics"),
     "scorecard": ("scorecard.content_quality", "scorecard.authority",
                   "scorecard.user_experience", "scorecard.ai_visibility"),
     "technical": ("technical.ai_crawler_access", "technical.structured_data",

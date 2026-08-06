@@ -18,22 +18,47 @@ class SlackError(Exception):
 
 
 def load_env(path=DEFAULT_ENV):
-    """Parse a KEY=VALUE .env file. Blank lines and # comments ignored."""
+    """Parse a KEY=VALUE .env file. Blank lines and # comments ignored.
+
+    A missing file yields {} rather than raising. There is no .env on a hosted
+    runner -- secrets arrive through the environment -- and opening it
+    unconditionally turned a fully-configured run into a FileNotFoundError
+    before it read a single message.
+
+    This returns the FILE's contents only. Use `config()` to read a setting;
+    it is the one that knows a real environment variable wins.
+    """
     out = {}
-    with open(path, encoding="utf-8") as fh:
-        for line in fh:
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            k, v = line.split("=", 1)
-            out[k.strip()] = v.strip()
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                out[k.strip()] = v.strip()
+    except OSError:
+        pass
     return out
+
+
+def config(key, default="", path=DEFAULT_ENV):
+    """One setting: a real environment variable wins, else the .env file.
+
+    Reading only the file meant CI secrets were invisible no matter how they
+    were set, which is exactly how a hosted runner supplies them.
+
+    An empty environment variable counts as unset, so an Actions secret that
+    is declared but never given a value cannot blank out a real value from the
+    file.
+    """
+    return os.environ.get(key) or load_env(path).get(key) or default
 
 
 class SlackClient:
     def __init__(self, token=None, env_path=DEFAULT_ENV):
         if token is None:
-            token = load_env(env_path).get("SLACK_BOT_TOKEN")
+            token = config("SLACK_BOT_TOKEN", path=env_path)
         if not token:
             raise SlackError("SLACK_BOT_TOKEN missing")
         self.token = token
