@@ -75,6 +75,38 @@ def find_role(rows, person):
     return None
 
 
+def _compact(text):
+    return re.sub(r"[^a-z0-9]", "", (text or "").lower())
+
+
+# Below this, a name fragment is not distinctive enough to identify a company.
+MIN_NAME = 6
+
+
+def is_about(row, company, domain):
+    """Whether a search result is plausibly about THIS company.
+
+    A live run surfaced Trustpilot, Leafsnap and ConsumerHealthDigest reviews
+    of "Clean Nutra" and "Clean Nutraceuticals" as though they belonged to
+    CLEAN Nutritionals -- three different businesses with a shared prefix. A
+    closer repeating another company's rating on a call is exactly the failure
+    this project exists to avoid, so a result has to carry the full compacted
+    company name or the prospect's own domain label to count.
+
+    A shared prefix is not a match: "cleannutra" does not contain
+    "cleannutritionals".
+    """
+    blob = _compact(" ".join([row.get("title", ""), row.get("snippet", ""),
+                              row.get("url", "")]))
+    name = _compact(company)
+    if name and len(name) >= MIN_NAME and name in blob:
+        return True
+    label = _compact((domain or "").split(".")[0])
+    if label and len(label) >= MIN_NAME and label in blob:
+        return True
+    return False
+
+
 def _dedupe(rows):
     out, seen = [], set()
     for r in rows:
@@ -146,6 +178,14 @@ def run(company, domain, person="", *, search=None, fetch=None, limit=8,
 
     company_rows = _dedupe(company_rows)
     person_rows = _dedupe(person_rows)
+
+    # Discard results that are about some other business with a similar name.
+    # Counted rather than silently dropped, so the dossier can say the search
+    # was noisy instead of implying it found nothing.
+    seen_total = len(company_rows)
+    company_rows = [r for r in company_rows if is_about(r, company, domain)]
+    discarded = seen_total - len(company_rows)
+
     if not company_rows and not person_rows:
         return None
 
@@ -181,6 +221,7 @@ def run(company, domain, person="", *, search=None, fetch=None, limit=8,
         "queries_run": len(company_queries(company, domain))
                        + (len(person_queries(person, company)) if person else 0),
         "results_seen": len(company_rows) + len(person_rows),
+        "results_discarded_as_other_companies": discarded,
         "role": role,
         "press": buckets["press"][:5],
         "profiles": buckets["profiles"][:5],

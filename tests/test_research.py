@@ -7,6 +7,8 @@ runner blocked, and refusing to read snippets throws away the only role
 information available.
 """
 
+import pytest
+
 import research
 
 
@@ -110,11 +112,13 @@ def test_max_follow_caps_the_requests():
         calls.append(url)
         return 200, "<html><body>x</body></html>"
 
-    rows = [{"rank": i, "title": "launch %d" % i, "url": "https://x%d.test" % i,
-             "domain": "x%d.test" % i, "snippet": "will launch soon",
+    rows = [{"rank": i, "title": "Acme Plumbing will launch %d" % i,
+             "url": "https://x%d.test" % i, "domain": "x%d.test" % i,
+             "snippet": "Acme Plumbing will launch soon",
              "aggregator": False} for i in range(10)]
-    research.run("Acme", "acme.com", "", search=searcher(company=rows),
-                 fetch=fetch, max_follow=2)
+    research.run("Acme Plumbing", "acmeplumbing.com",
+                 "", search=searcher(company=rows), fetch=fetch, max_follow=2)
+    assert calls, "the rows must survive the filter or this proves nothing"
     assert len(calls) <= 2
 
 
@@ -141,7 +145,8 @@ def test_a_failing_fetch_does_not_lose_the_search_results():
 
 
 def test_the_limits_are_stated_in_the_output():
-    got = research.run("Acme", "acme.com", "", search=searcher())
+    got = research.run("CLEAN Nutritionals", "cleannutritionals.com.au", "",
+                       search=searcher())
     assert any("prohibit automated access" in x for x in got["limits"])
 
 
@@ -154,3 +159,63 @@ def test_person_queries_are_skipped_when_there_is_no_contact():
 
     research.run("Acme", "acme.com", "", search=search)
     assert all("linkedin" not in q.lower() for q in seen)
+
+
+# --- results about a DIFFERENT company --------------------------------------
+
+@pytest.mark.parametrize("title,url,domain,keep", [
+    ("CLEAN Nutritionals", "https://brisbane.worldplaces.me/clean-nutritionals",
+     "brisbane.worldplaces.me", True),
+    ("Shop", "https://cleannutritionals.com.au/", "cleannutritionals.com.au", True),
+    ("Clean Nutra Reviews", "https://www.trustpilot.com/review/cleannutra.com",
+     "trustpilot.com", False),
+    ("Clean Nutraceuticals", "https://leafsnap.com/clean-nutraceuticals-x/",
+     "leafsnap.com", False),
+    ("Clean Nutra Review", "https://consumerhealthdigest.com/clean-nutra-review.html",
+     "consumerhealthdigest.com", False),
+])
+def test_a_shared_prefix_is_not_the_same_company(title, url, domain, keep):
+    """A live run put Trustpilot, Leafsnap and ConsumerHealthDigest reviews of
+    "Clean Nutra" and "Clean Nutraceuticals" into the dossier as though they
+    belonged to CLEAN Nutritionals. A closer repeating another company's rating
+    on a call is the exact failure this project exists to avoid."""
+    row = {"title": title, "snippet": "", "url": url, "domain": domain}
+    assert research.is_about(row, "CLEAN Nutritionals",
+                             "cleannutritionals.com.au") is keep
+
+
+def test_impostor_results_never_reach_the_output():
+    rows = [
+        {"title": "Clean Nutra Reviews", "snippet": "Rated 4.5 from 300 reviews",
+         "url": "https://www.trustpilot.com/review/cleannutra.com",
+         "domain": "trustpilot.com", "aggregator": True},
+        {"title": "CLEAN Nutritionals", "snippet": "Brisbane store",
+         "url": "https://brisbane.worldplaces.me/clean-nutritionals",
+         "domain": "brisbane.worldplaces.me", "aggregator": False},
+    ]
+    got = research.run("CLEAN Nutritionals", "cleannutritionals.com.au", "",
+                       search=lambda q, limit=10: rows)
+    urls = [r["url"] for bucket in ("press", "reviews", "mentions", "profiles")
+            for r in got[bucket]]
+    assert not any("cleannutra.com" in u for u in urls)
+    assert got["results_discarded_as_other_companies"] > 0
+
+
+def test_discards_are_counted_not_silently_dropped():
+    """So the dossier can say the search was noisy rather than imply it found
+    nothing."""
+    rows = [{"title": "Someone Else Ltd", "snippet": "", "url": "https://x.test",
+             "domain": "x.test", "aggregator": False}]
+    got = research.run("CLEAN Nutritionals", "cleannutritionals.com.au",
+                       "Mary-Louise Condon",
+                       search=lambda q, limit=10: rows if "Condon" not in q
+                       else PERSON_ROWS)
+    assert got["results_discarded_as_other_companies"] >= 1
+
+
+def test_a_short_company_name_does_not_match_everything():
+    """Below six characters a name fragment is not distinctive enough to
+    identify a company at all."""
+    row = {"title": "Ace Hardware", "snippet": "", "url": "https://x.test",
+           "domain": "x.test"}
+    assert research.is_about(row, "Ace", "ace.com") is False
