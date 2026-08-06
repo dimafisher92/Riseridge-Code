@@ -70,15 +70,9 @@ class Poster:
 
     def __init__(self, client=None, channel=None, bot_user_id=None,
                  dry_run=True, upload=None, internal=False):
-        env = {}
-        if channel is None or bot_user_id is None:
-            try:
-                env = slack.load_env()
-            except OSError:
-                env = {}
         self.client = client or slack.SlackClient()
-        self.channel = channel or env.get("SALES_PIPELINE_CHANNEL")
-        self.bot_user_id = bot_user_id or env.get("SLACK_BOT_USER_ID", "")
+        self.channel = channel or slack.config("SALES_PIPELINE_CHANNEL")
+        self.bot_user_id = bot_user_id or slack.config("SLACK_BOT_USER_ID")
         self.dry_run = dry_run
         # An internal review channel is the operator's own space, not a
         # prospect's thread. The arming switch guards the irreversible case --

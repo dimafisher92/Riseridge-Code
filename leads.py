@@ -262,8 +262,8 @@ def main():
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
-    env = slack.load_env()
-    got = scan(slack.SlackClient(), env["SALES_PIPELINE_CHANNEL"], pages=a.pages)
+    got = scan(slack.SlackClient(), slack.config("SALES_PIPELINE_CHANNEL"),
+               pages=a.pages)
     if a.json:
         print(json.dumps([x.as_dict() for x in got], indent=2))
         return

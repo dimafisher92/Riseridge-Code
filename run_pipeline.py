@@ -290,13 +290,8 @@ def review_marker(lead):
 def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
         client=None, channel=None, chrome=True, limit=0, review_channel=None):
     client = client or slack.SlackClient()
-    env = {}
-    try:
-        env = slack.load_env()
-    except OSError:
-        pass
-    channel = channel or env.get("SALES_PIPELINE_CHANNEL")
-    review_channel = review_channel or os.environ.get("RR_REVIEW_CHANNEL", "")
+    channel = channel or slack.config("SALES_PIPELINE_CHANNEL")
+    review_channel = review_channel or slack.config("RR_REVIEW_CHANNEL")
     if not channel:
         raise SystemExit("SALES_PIPELINE_CHANNEL is not set")
 
@@ -306,7 +301,7 @@ def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
         fresh = fresh[:limit]
 
     poster = post_mod.Poster(client=client, channel=channel,
-                             bot_user_id=env.get("SLACK_BOT_USER_ID", ""),
+                             bot_user_id=slack.config("SLACK_BOT_USER_ID"),
                              dry_run=not do_post)
     # The review path exists because this repository is public: build logs and
     # artifacts are world-readable there, so prospect artefacts cannot leave
@@ -315,7 +310,7 @@ def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
     if review_channel and not do_post:
         reviewer = post_mod.Poster(
             client=client, channel=review_channel,
-            bot_user_id=env.get("SLACK_BOT_USER_ID", ""),
+            bot_user_id=slack.config("SLACK_BOT_USER_ID"),
             dry_run=False, internal=True)
 
     results = []
