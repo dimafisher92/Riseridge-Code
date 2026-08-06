@@ -314,3 +314,55 @@ def test_format_recommendation_shows_every_signal_and_flag():
     assert "FLAGS" in text
     for s in rec["signals"]:
         assert s["signal"] in text
+
+
+# --- stated revenue (the Loom funnel's money question) ----------------------
+
+@pytest.mark.parametrize("answer,expected", [
+    ("$50K – $100K /month", 50000),
+    ("$10K - $25K /month", 10000),
+    ("$500K+ /month", 500000),
+    ("$1.2M per year", 100000),
+    ("", None),
+    (None, None),
+])
+def test_monthly_revenue_parsing(answer, expected):
+    """Ranges resolve to the lower bound: this sets a floor, so the
+    conservative end is the defensible one."""
+    assert pricing.monthly_revenue(answer) == expected
+
+
+def test_revenue_sets_a_size_floor():
+    """The Loom funnel captures revenue instead of a budget. Ignoring it left
+    those leads with no company-scale signal at all."""
+    rec = pricing.recommend("ecom", revenue="$50K – $100K /month")
+    assert rec["size_class"] == "mid"
+    assert rec["size_floor"] == "mid"
+    assert rec["anchor_price"] == 5000
+
+
+def test_revenue_is_a_floor_that_weak_organic_cannot_lower():
+    rec = pricing.recommend("ecom", revenue="$50K – $100K /month",
+                            evidence=evidence(monthly_organic_visits=90,
+                                              ranking_keyword_count=30))
+    assert rec["size_class"] == "mid"
+
+
+def test_strong_organic_can_still_raise_above_revenue():
+    rec = pricing.recommend("ecom", revenue="$10K - $25K /month",
+                            evidence=evidence(monthly_organic_visits=90000))
+    assert rec["size_floor"] == "small"
+    assert rec["size_class"] == "large"
+
+
+def test_revenue_appears_as_a_signal_with_its_reasoning():
+    rec = pricing.recommend("ecom", revenue="$50K – $100K /month")
+    sig = [s for s in rec["signals"] if s["signal"] == "monthly_revenue_usd"]
+    assert sig and sig[0]["kind"] == "floor"
+    assert sig[0]["value"] == 50000
+    assert rec["stated_revenue"] == "$50K – $100K /month"
+
+
+def test_no_revenue_leaves_the_signal_unknown():
+    rec = pricing.recommend("ecom")
+    assert "monthly_revenue_usd" in rec["unknown_signals"]

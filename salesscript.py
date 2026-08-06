@@ -129,7 +129,7 @@ def discovery_for(finding_keys, frustration=""):
 
 # --- impact -----------------------------------------------------------------
 
-def impact_lines(ev, finding_keys):
+def impact_lines(ev, finding_keys, anchor=None):
     """Expected business impact, stated only where a real figure supports it."""
     g = ev.get if ev is not None and hasattr(ev, "get") else (lambda p: None)
     out = []
@@ -150,9 +150,22 @@ def impact_lines(ev, finding_keys):
     visits = g("traffic.monthly_organic_visits")
     value = g("traffic.traffic_value_usd")
     if value:
-        out.append("Current organic traffic is worth about $%s/month at paid "
-                   "rates. That is the number to compare the retainer against."
-                   % "{:,}".format(int(value)))
+        # Framing matters more than the figure here. "Compare the retainer
+        # against this" only works when the number is large enough to make the
+        # retainer look cheap. A live run produced "$24/month" against a
+        # $5,000 anchor, which reads as an argument against buying -- so a
+        # near-zero value is presented as the unbuilt channel it actually is.
+        if anchor and value < anchor:
+            out.append(
+                "Organic is worth about $%s/month at paid rates today -- "
+                "effectively nothing next to what they spend acquiring "
+                "customers elsewhere. Do NOT frame the retainer against this "
+                "figure; the point is that the channel is unbuilt, not that "
+                "it is cheap." % "{:,}".format(int(value)))
+        else:
+            out.append("Current organic traffic is worth about $%s/month at "
+                       "paid rates. That is the number to compare the retainer "
+                       "against." % "{:,}".format(int(value)))
     elif visits:
         out.append("Current organic traffic is roughly %s visits/month."
                    % "{:,}".format(int(visits)))
@@ -248,7 +261,8 @@ def build(lead, *, evidence=None, dossier=None, recommendation=None,
 
     add("")
     add("EXPECTED BUSINESS IMPACT")
-    for line in impact_lines(evidence, finding_keys):
+    for line in impact_lines(evidence, finding_keys,
+                             anchor=(rec or {}).get("anchor_price")):
         add("  - %s" % line)
 
     add("")

@@ -26,6 +26,9 @@ import urllib.request
 import urllib.robotparser
 from datetime import datetime, timezone
 
+import research as research_mod
+import siteaudit
+
 UA = ("Mozilla/5.0 (compatible; RiseRidgeAudit/1.0; "
       "+https://riseridge.io/bot)")
 TIMEOUT = 20
@@ -405,7 +408,8 @@ def crawl(domain, fetch=None, max_pages=MAX_PAGES):
 
 
 def build(domain, *, business_name="", contact_name="", decision_answer="",
-          fetch=None, max_pages=MAX_PAGES, now=None):
+          fetch=None, max_pages=MAX_PAGES, now=None, search=None,
+          web_research=None):
     """A dossier for one prospect. Pure assembly over fetched pages."""
     if not domain:
         raise DossierError("domain is required")
@@ -448,6 +452,42 @@ def build(domain, *, business_name="", contact_name="", decision_answer="",
 
     unknown = sorted(k for k, v in company.items() if v.get("value") is None)
 
+    # The funnel's own answers are thin and self-reported -- for a Loom booking
+    # there are barely any -- so the company and the contact are researched on
+    # the open web rather than taken on trust.
+    # `web_research=None` means auto: on in production, off when the caller
+    # injected a transport. An injected fetch signals an offline context, and
+    # silently reaching the live network from there would make tests slow,
+    # flaky and dependent on a search engine's mood.
+    if web_research is None:
+        web_research = search is not None or fetch is None
+
+    web = None
+    if web_research:
+        try:
+            web = research_mod.run(business_name or domain, domain,
+                                   contact_name, search=search,
+                                   fetch=fetch or http_fetch)
+        except Exception:
+            web = None
+
+    # A real technical/SEO audit of the pages already fetched. Costs nothing
+    # extra and fills the evidence block the spec had to leave null.
+    audit = siteaudit.audit(pages, base_url=home_url,
+                            robots_txt=None, sitemap_found=None)
+
+    if web and (web.get("role") or {}).get("value") and \
+            company["decision_authority"]["value"] is None:
+        # A founder or owner is the decision-maker; that is worth inferring
+        # from a sourced role, and it is recorded with that source.
+        role = web["role"]
+        if re.search(r"founder|owner|ceo|president|principal|proprietor",
+                     role["value"], re.I):
+            company["decision_authority"] = _field(
+                "sole", role["source"], "role found in public search results",
+                role["evidence"])
+            unknown = [u for u in unknown if u != "decision_authority"]
+
     return {
         "domain": domain,
         "business_name": business_name or domain,
@@ -457,6 +497,8 @@ def build(domain, *, business_name="", contact_name="", decision_answer="",
         "pages_fetched": sorted(pages),
         "company": company,
         "unknown_fields": unknown,
+        "web_research": web,
+        "site_audit": audit,
         "research_urls": research_urls(domain, contact_name, business_name),
         "limits": [
             "LinkedIn employee count, funding history and press coverage are "
@@ -470,28 +512,121 @@ def build(domain, *, business_name="", contact_name="", decision_answer="",
     }
 
 
+def _slack_link(url, label=""):
+    return "<%s|%s>" % (url, label or url) if url else ""
+
+
+def _known(field):
+    return field and field.get("value") is not None
+
+
 def format_dossier(d):
-    """Operator-readable brief."""
-    out = ["PROSPECT DOSSIER  %s" % d["business_name"],
-           "  domain    %s" % d["domain"],
-           "  contact   %s" % (d["contact_name"] or "(unknown)"),
-           "  pages     %d fetched" % len(d["pages_fetched"]),
-           "", "  COMPANY"]
-    for key, f in d["company"].items():
-        v = f.get("value")
-        shown = "unknown" if v is None else v
-        out.append("    %-20s %s" % (key, shown))
-        if v is not None and f.get("evidence"):
-            out.append("      %s" % f["evidence"][:110])
-        if v is not None and f.get("source"):
-            out.append("      source: %s" % f["source"])
-    out += ["", "  NOT ESTABLISHED: %s" % (", ".join(d["unknown_fields"]) or "none"),
-            "", "  RESEARCH (open by hand)"]
-    for k, url in d["research_urls"].items():
-        out.append("    %-18s %s" % (k, url))
-    out += ["", "  LIMITS"]
-    for line in d["limits"]:
-        out.append("    - " + line)
+    """The closer's brief, in Slack mrkdwn.
+
+    Written for Slack, not for a terminal. The previous version was a padded
+    column layout inside a code fence, which Slack renders as a wall of
+    monospace -- unreadable on a phone and impossible to skim before a call.
+    Slack mrkdwn is *bold*, bullets, and <url|label> links; there are no
+    headers or tables, so structure comes from bold lines and spacing.
+    """
+    c = d.get("company") or {}
+    web = d.get("web_research") or {}
+    audit = d.get("site_audit") or {}
+    out = []
+
+    out.append("*%s*  ·  %s" % (d["business_name"],
+                                _slack_link("https://" + d["domain"],
+                                            d["domain"])))
+
+    # --- who you are talking to ---
+    who = []
+    if d.get("contact_name"):
+        who.append("*%s*" % d["contact_name"])
+    role = (web.get("role") or {})
+    if role.get("value"):
+        who.append(role["value"])
+    if who:
+        out.append("")
+        out.append("*Who you are speaking to*")
+        out.append("• " + " — ".join(who))
+        if role.get("source"):
+            out.append("  _sourced from_ %s" % _slack_link(role["source"],
+                                                           "search result"))
+        if _known(c.get("decision_authority")):
+            out.append("• Decision-making: %s"
+                       % c["decision_authority"]["value"])
+
+    # --- what the business is ---
+    facts = []
+    if _known(c.get("platform")):
+        facts.append("Runs on *%s*" % c["platform"]["value"])
+    if _known(c.get("employee_count")):
+        facts.append("*%s* staff" % c["employee_count"]["value"])
+    if _known(c.get("location_count")):
+        facts.append("*%s* locations" % c["location_count"]["value"])
+    if _known(c.get("years_in_business")):
+        facts.append("*%s* years in business" % c["years_in_business"]["value"])
+    if _known(c.get("ownership")):
+        facts.append("Ownership: *%s*" % c["ownership"]["value"])
+    if _known(c.get("page_count")):
+        n = c["page_count"]["value"]
+        facts.append("*%s* page%s discovered" % (n, "" if n == 1 else "s"))
+    if c.get("published_prices", {}).get("value") is True:
+        facts.append("Publishes prices")
+    if facts:
+        out.append("")
+        out.append("*The business*")
+        for f in facts:
+            out.append("• " + f)
+
+    # --- what the web says ---
+    if web:
+        lines = []
+        for r in (web.get("press") or [])[:3]:
+            lines.append("• %s — %s" % (_slack_link(r["url"], r["title"][:70]),
+                                        r["domain"]))
+        for f in (web.get("followed") or [])[:2]:
+            if f.get("extract"):
+                lines.append("• _%s_" % f["extract"][:180].strip())
+        if web.get("reviews"):
+            lines.append("• Listed on: %s"
+                         % ", ".join(_slack_link(r["url"], r["domain"])
+                                     for r in web["reviews"][:4]))
+        if lines:
+            out.append("")
+            out.append("*What the web says*")
+            out.extend(lines)
+
+    # --- the site audit, headline only ---
+    if audit:
+        issues = siteaudit.headline_issues(audit, limit=4)
+        out.append("")
+        out.append("*Website health* — %s" % siteaudit.summary_line(audit))
+        for c_ in issues:
+            out.append("• %s: *%s of %s* pages — %s"
+                       % (c_["label"], c_["failing"], c_["checked"],
+                          c_["detail"].split(".")[0]))
+
+    # --- what to ask, because it is not knowable from outside ---
+    gaps = [k.replace("_", " ") for k in (d.get("unknown_fields") or [])]
+    if gaps:
+        out.append("")
+        out.append("*Confirm on the call* (not establishable from outside)")
+        out.append("• " + ", ".join(gaps))
+
+    # --- links, last, for anyone who wants to go deeper ---
+    urls = d.get("research_urls") or {}
+    if urls:
+        out.append("")
+        out.append("*Dig deeper*  "
+                   + "  ·  ".join(_slack_link(u, k.replace("_", " "))
+                                  for k, u in urls.items()))
+
+    for line in d.get("limits") or []:
+        pass
+    out.append("")
+    out.append("_Every figure above is sourced or marked unknown. "
+               "Nothing is inferred._")
     return "\n".join(out)
 
 

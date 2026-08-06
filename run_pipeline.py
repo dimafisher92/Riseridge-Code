@@ -54,6 +54,10 @@ CATEGORY_FOR = (
     ("restaurant", "restaurant"),
     ("e-commerce", "online store"),
     ("ecommerce", "online store"),
+    # The Loom funnel names the call "Ecom AI SEO Strategic Call" and
+    # carries no business-type answer at all, so without this every
+    # Loom booking silently lost its AI section.
+    ("ecom", "online store"),
     ("dental", "dentist"),
     ("fitness", "gym"),
     ("automotive", "auto repair shop"),
@@ -185,6 +189,17 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
     except Exception as e:
         result["errors"].append("dossier: %s" % e)
 
+    # The dossier already fetched and audited the site's pages; carrying that
+    # into evidence costs nothing and fills the technical block the spec had to
+    # leave null for want of a crawl budget.
+    if dos and dos.get("site_audit") and ev_dict is not None:
+        ev_dict["site_audit"] = dos["site_audit"]
+        try:
+            collect.write_evidence(ev_dict)
+            ev = evidence_mod.Evidence(ev_dict)
+        except Exception as e:
+            result["errors"].append("site_audit: %s" % e)
+
     # --- AI visibility ------------------------------------------------------
     if probe and ev_dict is not None:
         category = category_for(lead)
@@ -227,7 +242,7 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
         rec = pricing.recommend(
             lead.track or "local", evidence=ev_dict, dossier=dos,
             budget_answer=lead.budget, urgency=lead.urgency,
-            currency="USD")
+            revenue=getattr(lead, "revenue", ""), currency="USD")
         path = os.path.join(outdir, "pricing.json")
         with open(path, "w", encoding="utf-8") as fh:
             json.dump(rec, fh, indent=1)

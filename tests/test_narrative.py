@@ -436,3 +436,46 @@ def test_the_cover_names_no_engine_at_all():
     body = re.sub(r"<!--.*?-->", "", cover, flags=re.S)
     for engine in ("ChatGPT", "Perplexity", "Gemini", "Copilot"):
         assert engine not in body
+
+
+# --- keeping prospect data off the page when it would break the render ------
+
+def test_a_row_naming_a_vendor_is_dropped_not_rendered():
+    """A backlink anchor can legitimately contain "majestic". verify_pdf sees
+    only extracted text and fails the whole render for it, so the row goes."""
+    out = narrative.rows([{"anchor": "Majestic Hotels", "count": 9},
+                          {"anchor": "clean nutritionals", "count": 4}],
+                         ("anchor", None), ("count", "int"))
+    assert "Majestic" not in out
+    assert "clean nutritionals" in out
+
+
+def test_a_row_in_an_unrenderable_script_is_dropped():
+    """Chrome falls back to Arial for a glyph the brand faces lack, which fails
+    the embed gate and costs the entire PDF."""
+    out = narrative.rows([{"keyword": "最好的补充剂", "volume": 100},
+                          {"keyword": "protein powder", "volume": 90}],
+                         ("keyword", None), ("volume", "int"))
+    assert "protein powder" in out
+    assert "补充" not in out
+
+
+@pytest.mark.parametrize("text,ok", [
+    ("Clean Nutritionals", True),
+    ("Café Ürün", True),
+    ("a — b … c", True),
+    ("最好的补充剂", False),
+    ("best 💪 protein", False),
+    ("лучший", False),
+])
+def test_renderable_matches_the_brand_font_coverage(text, ok):
+    assert narrative.renderable(text) is ok
+
+
+def test_escaping_strips_unrenderable_characters():
+    assert "💪" not in narrative._esc("protein 💪 powder")
+    assert narrative._esc("Smith & Sons") == "Smith &amp; Sons"
+
+
+def test_curly_quotes_are_normalised_rather_than_dropped():
+    assert narrative._esc("Mary’s") == "Mary's"
