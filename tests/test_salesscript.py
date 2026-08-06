@@ -211,3 +211,27 @@ def test_it_builds_with_nothing_but_a_lead():
 def test_it_builds_from_a_plain_dict_lead():
     text = salesscript.build({"name": "Casey", "domain": "casey.com"})
     assert "Casey" in text
+
+
+def test_a_tiny_traffic_value_is_not_framed_against_the_retainer():
+    """A live run produced 'organic is worth $24/month' as 'the number to
+    compare the retainer against' -- next to a $5,000 anchor that sentence
+    argues the prospect out of the deal."""
+    rec = pricing.recommend("ecom", revenue="$50K - $100K /month")
+    ev = ev_of(traffic={"traffic_value_usd": metric(24)})
+    text = salesscript.build(lead(), evidence=ev, recommendation=rec)
+    assert "compare the retainer against" not in text
+    assert "Do NOT frame the retainer against this figure" in text
+    assert "$24/month" in text
+
+
+def test_a_large_traffic_value_is_still_the_comparison():
+    rec = pricing.recommend("ecom", revenue="$50K - $100K /month")
+    ev = ev_of(traffic={"traffic_value_usd": metric(61900)})
+    text = salesscript.build(lead(), evidence=ev, recommendation=rec)
+    assert "compare the retainer against" in text
+
+
+def test_traffic_value_framing_without_a_recommendation_is_unchanged():
+    ev = ev_of(traffic={"traffic_value_usd": metric(61900)})
+    assert "compare the retainer against" in salesscript.build(lead(), evidence=ev)
