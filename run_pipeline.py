@@ -305,7 +305,7 @@ def summary_for(result, lead):
 
 
 def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
-        client=None, channel=None, chrome=True, limit=0):
+        client=None, channel=None, chrome=True, limit=0, force_repost=False):
     client = client or slack.SlackClient()
     channel = channel or slack.config("SALES_PIPELINE_CHANNEL")
     if not channel:
@@ -341,7 +341,8 @@ def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
                 pdf_path=r["artefacts"].get("pdf"),
                 dossier_text=r.get("dossier_text", ""),
                 script_text=r.get("script_text", ""),
-                business_name=business_name_for(lead))
+                business_name=business_name_for(lead),
+                force=force_repost)
         except Exception as e:
             r["errors"].append("post: %s" % e)
         results.append(r)
@@ -431,6 +432,10 @@ def main():
     ap.add_argument("--no-probe", action="store_true")
     ap.add_argument("--no-chrome", action="store_true",
                     help="build HTML but skip the PDF render")
+    ap.add_argument("--force-repost", action="store_true",
+                    help="post again even if the bot already replied in the "
+                         "thread. For a deliberate regeneration; leaves both "
+                         "the old and the new artefacts in the thread")
     ap.add_argument("--reveal", action="store_true",
                     help="print prospect names and domains. Local use only: "
                          "hosted run logs are world-readable on a public repo")
@@ -439,7 +444,7 @@ def main():
 
     report = run(pages=a.pages, max_age_hours=a.max_age_hours, apply=a.apply,
                  do_post=a.post, probe=not a.no_probe, chrome=not a.no_chrome,
-                 limit=a.limit)
+                 limit=a.limit, force_repost=a.force_repost)
     if a.json:
         text = json.dumps(report, indent=2, default=str)
         print(text if a.reveal else redact(text, _identifiers(report)))

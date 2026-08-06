@@ -247,3 +247,29 @@ def test_internal_artefacts_are_labelled_internal(monkeypatch):
 def test_channel_is_required():
     with pytest.raises(post.PostError):
         post.Poster(client=FakeClient(), channel="", bot_user_id="U")
+
+
+# --- deliberate regeneration ------------------------------------------------
+
+def test_force_reposts_over_the_idempotency_guard(monkeypatch):
+    """For regenerating artefacts after a fix. Off by default, because the
+    guard it bypasses is the only thing preventing a duplicated thread."""
+    monkeypatch.setenv(post.ARMED_ENV, "1")
+    c = FakeClient(replies=[{"ts": "1.1"}, {"ts": "1.2", "user": "U_BOT"}])
+    plan = poster(c, dry_run=False).publish("1.1", summary="again", force=True)
+    assert plan["status"] == "posted"
+    assert "chat.postMessage" in c.methods()
+
+
+def test_without_force_an_existing_reply_still_skips(monkeypatch):
+    monkeypatch.setenv(post.ARMED_ENV, "1")
+    c = FakeClient(replies=[{"ts": "1.2", "user": "U_BOT"}])
+    plan = poster(c, dry_run=False).publish("1.1", summary="again")
+    assert plan["status"] == "skipped"
+
+
+def test_force_still_respects_dry_run():
+    c = FakeClient(replies=[{"ts": "1.2", "user": "U_BOT"}])
+    plan = poster(c).publish("1.1", summary="again", force=True)
+    assert plan["status"] == "dry-run"
+    assert "chat.postMessage" not in c.methods()
