@@ -18,6 +18,7 @@ tells the closer to run discovery.
 """
 
 import argparse
+import hashlib
 import json
 import os
 import time
@@ -244,8 +245,18 @@ def summary_for(result, lead):
     return "\n".join(lines)
 
 
+def review_marker(lead):
+    """A non-reversible per-lead tag for the review channel.
+
+    Lets a re-run find its own previous review post without the channel
+    carrying the prospect's name or domain in the marker itself.
+    """
+    raw = "%s|%s" % (lead.domain or "", lead.thread_ts or "")
+    return "ref-" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:10]
+
+
 def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
-        client=None, channel=None, chrome=True, limit=0):
+        client=None, channel=None, chrome=True, limit=0, review_channel=None):
     client = client or slack.SlackClient()
     env = {}
     try:
@@ -253,6 +264,7 @@ def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
     except OSError:
         pass
     channel = channel or env.get("SALES_PIPELINE_CHANNEL")
+    review_channel = review_channel or os.environ.get("RR_REVIEW_CHANNEL", "")
     if not channel:
         raise SystemExit("SALES_PIPELINE_CHANNEL is not set")
 
@@ -264,6 +276,15 @@ def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
     poster = post_mod.Poster(client=client, channel=channel,
                              bot_user_id=env.get("SLACK_BOT_USER_ID", ""),
                              dry_run=not do_post)
+    # The review path exists because this repository is public: build logs and
+    # artifacts are world-readable there, so prospect artefacts cannot leave
+    # the runner that way. They go to an internal Slack channel instead.
+    reviewer = None
+    if review_channel and not do_post:
+        reviewer = post_mod.Poster(
+            client=client, channel=review_channel,
+            bot_user_id=env.get("SLACK_BOT_USER_ID", ""),
+            dry_run=False, internal=True)
 
     results = []
     for lead in fresh:
@@ -275,13 +296,22 @@ def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
                  "errors": ["fatal: " + traceback.format_exc(limit=3)],
                  "artefacts": {}, "findings": []}
         try:
-            r["posting"] = poster.publish(
-                lead.thread_ts,
-                summary=summary_for(r, lead),
-                pdf_path=r["artefacts"].get("pdf"),
-                dossier_text=r.get("dossier_text", ""),
-                script_text=r.get("script_text", ""),
-                business_name=lead.site_title or lead.domain)
+            if reviewer is not None:
+                r["posting"] = reviewer.publish_review(
+                    review_marker(lead),
+                    summary=summary_for(r, lead),
+                    pdf_path=r["artefacts"].get("pdf"),
+                    dossier_text=r.get("dossier_text", ""),
+                    script_text=r.get("script_text", ""),
+                    business_name=lead.site_title or lead.domain)
+            else:
+                r["posting"] = poster.publish(
+                    lead.thread_ts,
+                    summary=summary_for(r, lead),
+                    pdf_path=r["artefacts"].get("pdf"),
+                    dossier_text=r.get("dossier_text", ""),
+                    script_text=r.get("script_text", ""),
+                    business_name=lead.site_title or lead.domain)
         except Exception as e:
             r["errors"].append("post: %s" % e)
         results.append(r)
@@ -292,7 +322,39 @@ def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
             "results": results}
 
 
-def format_run(report):
+def _identifiers(report):
+    """Every string in the report that identifies a prospect."""
+    out = set()
+    for group in (report.get("results", []), report.get("skipped", [])):
+        for r in group:
+            for key in ("domain", "name", "email"):
+                v = r.get(key)
+                if v:
+                    out.add(str(v))
+    return out
+
+
+def redact(text, identifiers):
+    """Replace prospect identifiers with a stable non-reversible tag.
+
+    The run log and any build artifact are world-readable on a public
+    repository, so prospect names, emails and domains must not appear in
+    either. The tag is stable within a run, so a reader can still follow one
+    prospect through the log and match it to the Slack thread.
+    """
+    for value in sorted(identifiers, key=len, reverse=True):
+        tag = "<prospect:%s>" % hashlib.sha256(
+            value.lower().encode("utf-8")).hexdigest()[:8]
+        text = text.replace(value, tag)
+    return text
+
+
+def format_run(report, *, reveal=False):
+    """The run log.
+
+    Redacted by default. `reveal=True` is for an operator running this on their
+    own machine, never for a hosted runner whose logs are public.
+    """
     out = ["PIPELINE RUN  scanned %d, selected %d"
            % (report["scanned"], report["selected"])]
     for s in report["skipped"]:
@@ -313,7 +375,8 @@ def format_run(report):
         out.append("    posting   %s%s" % (posting.get("status", "not attempted"),
                                            (" (%s)" % posting["reason"])
                                            if posting.get("reason") else ""))
-    return "\n".join(out)
+    text = "\n".join(out)
+    return text if reveal else redact(text, _identifiers(report))
 
 
 def main():
@@ -329,14 +392,23 @@ def main():
     ap.add_argument("--no-probe", action="store_true")
     ap.add_argument("--no-chrome", action="store_true",
                     help="build HTML but skip the PDF render")
+    ap.add_argument("--review-channel", default="",
+                    help="post artefacts to this internal channel instead of "
+                         "the prospect thread (the review run)")
+    ap.add_argument("--reveal", action="store_true",
+                    help="print prospect names and domains. Local use only: "
+                         "hosted run logs are world-readable on a public repo")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
     report = run(pages=a.pages, max_age_hours=a.max_age_hours, apply=a.apply,
                  do_post=a.post, probe=not a.no_probe, chrome=not a.no_chrome,
-                 limit=a.limit)
-    print(json.dumps(report, indent=2, default=str) if a.json
-          else format_run(report))
+                 limit=a.limit, review_channel=a.review_channel)
+    if a.json:
+        text = json.dumps(report, indent=2, default=str)
+        print(text if a.reveal else redact(text, _identifiers(report)))
+    else:
+        print(format_run(report, reveal=a.reveal))
 
 
 if __name__ == "__main__":

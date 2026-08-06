@@ -69,7 +69,7 @@ class Poster:
     """Writes to one channel. `dry_run` is the default and performs no writes."""
 
     def __init__(self, client=None, channel=None, bot_user_id=None,
-                 dry_run=True, upload=None):
+                 dry_run=True, upload=None, internal=False):
         env = {}
         if channel is None or bot_user_id is None:
             try:
@@ -80,6 +80,11 @@ class Poster:
         self.channel = channel or env.get("SALES_PIPELINE_CHANNEL")
         self.bot_user_id = bot_user_id or env.get("SLACK_BOT_USER_ID", "")
         self.dry_run = dry_run
+        # An internal review channel is the operator's own space, not a
+        # prospect's thread. The arming switch guards the irreversible case --
+        # a wrong message in front of a prospect -- so it does not apply here.
+        # dry_run still does.
+        self.internal = internal
         self._upload = upload or _raw_upload
         self.planned = []
         if not self.channel:
@@ -92,7 +97,7 @@ class Poster:
         self.planned.append({"action": action, "detail": detail})
         if self.dry_run:
             return True
-        if not posting_armed():
+        if not self.internal and not posting_armed():
             raise PostError(
                 "posting was requested but %s is not set. Arm the bot "
                 "explicitly; nothing reaches a prospect thread otherwise."
@@ -125,12 +130,17 @@ class Poster:
     # --- writes -------------------------------------------------------------
 
     def post_text(self, thread_ts, text):
+        """Post to a thread, or to the channel itself when thread_ts is None."""
         if self._guard("chat.postMessage",
-                       "%d chars to thread %s" % (len(text), thread_ts)):
+                       "%d chars to %s" % (len(text),
+                                           "thread %s" % thread_ts if thread_ts
+                                           else "channel %s" % self.channel)):
             return None
-        return self.client.api("chat.postMessage", {
-            "channel": self.channel, "thread_ts": thread_ts, "text": text,
-            "unfurl_links": "false", "unfurl_media": "false"})
+        params = {"channel": self.channel, "text": text,
+                  "unfurl_links": "false", "unfurl_media": "false"}
+        if thread_ts:
+            params["thread_ts"] = thread_ts
+        return self.client.api("chat.postMessage", params)
 
     def upload_file(self, thread_ts, path, title, comment=""):
         """The current three-step external upload. files.upload was retired."""
@@ -138,8 +148,10 @@ class Poster:
             data = fh.read()
         filename = os.path.basename(path)
         if self._guard("files.upload",
-                       "%s (%d bytes) to thread %s"
-                       % (filename, len(data), thread_ts)):
+                       "%s (%d bytes) to %s"
+                       % (filename, len(data),
+                          "thread %s" % thread_ts if thread_ts
+                          else "channel %s" % self.channel)):
             return None
         got = self.client.api("files.getUploadURLExternal",
                               {"filename": filename, "length": str(len(data))})
@@ -147,12 +159,14 @@ class Poster:
         if not url or not file_id:
             raise PostError("getUploadURLExternal returned no upload target")
         self._upload(url, data, filename)
-        return self.client.api("files.completeUploadExternal", {
+        params = {
             "files": json.dumps([{"id": file_id, "title": title}]),
             "channel_id": self.channel,
-            "thread_ts": thread_ts,
             "initial_comment": comment,
-        })
+        }
+        if thread_ts:
+            params["thread_ts"] = thread_ts
+        return self.client.api("files.completeUploadExternal", params)
 
     def mark(self, thread_ts):
         """Visible marker on the source message. Never the primary guard."""
@@ -202,6 +216,59 @@ class Poster:
 
         self.mark(thread_ts)
         return {"status": "dry-run" if self.dry_run else "posted",
+                "posted": did, "planned": self.planned}
+
+
+    # --- internal review ----------------------------------------------------
+
+    def already_reviewed(self, marker, pages=1):
+        """True if this marker already appears in the review channel.
+
+        The prospect-thread guard cannot be used here: a review post is a new
+        top-level message, so there is no thread to inspect. The marker is a
+        non-reversible tag derived from the lead, embedded in the message, so a
+        re-run finds its own previous post without the channel ever carrying
+        the prospect's name.
+        """
+        try:
+            for msg in self.client.history(self.channel, pages=pages):
+                if marker in (msg.get("text") or ""):
+                    return True
+        except slack.SlackError as e:
+            raise PostError("cannot read review channel: %s" % e)
+        return False
+
+    def publish_review(self, marker, *, summary, pdf_path=None,
+                       dossier_text="", script_text="", business_name=""):
+        """Post the bundle to an internal channel instead of a prospect thread.
+
+        This is what makes the operator's review run possible when the
+        repository is public: build logs and artifacts are world-readable
+        there, so the artefacts have to reach the operator through Slack.
+        """
+        if self.already_reviewed(marker):
+            return {"status": "skipped",
+                    "reason": "already in the review channel",
+                    "planned": self.planned}
+
+        head = "%s\n_Review copy -- not posted to the prospect._ `%s`" % (
+            summary, marker)
+        did = []
+        if pdf_path and os.path.exists(pdf_path):
+            self.upload_file(None, pdf_path,
+                             "AI Search Visibility Audit -- %s"
+                             % (business_name or ""), head)
+            did.append("audit pdf")
+        else:
+            self.post_text(None, head)
+            did.append("summary")
+
+        for label, body in (("dossier", dossier_text), ("script", script_text)):
+            if body:
+                self.post_text(None, _chunk_header(label) + body)
+                did.append(label)
+
+        return {"status": "dry-run" if self.dry_run else "review-posted",
                 "posted": did, "planned": self.planned}
 
 

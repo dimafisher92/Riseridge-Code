@@ -5,6 +5,7 @@ and one failing stage never silently produces a confident artefact.
 """
 
 import json
+import re
 
 import pytest
 
@@ -221,6 +222,126 @@ def test_the_run_report_shows_what_posting_would_have_done(monkeypatch):
     assert "dry-run" in text
     assert "a finding" in text
     assert "/x/script.txt" in text
+
+
+# --- the run log is world-readable on a public repo -------------------------
+
+def _report_with_pii():
+    return {"scanned": 1, "selected": 1,
+            "skipped": [{"domain": "skipped-co.com", "name": "Alex Rivera",
+                         "reason": "no backfill"}],
+            "results": [{"domain": "acme.com", "name": "Jordan Alvarez",
+                         "artefacts": {"pdf": "/s/prospects/acme.com/audit.pdf"},
+                         "findings": ["95% of your traffic already knew you"],
+                         "errors": ["collect: acme.com timed out"],
+                         "posting": {"status": "dry-run"}}]}
+
+
+def test_the_run_log_is_redacted_by_default():
+    """Actions logs and artifacts are world-readable on a public repository.
+    Prospect names and domains must not appear in either."""
+    text = run_pipeline.format_run(_report_with_pii())
+    for secret in ("acme.com", "Jordan Alvarez", "Alex Rivera",
+                   "skipped-co.com"):
+        assert secret not in text, "%s leaked into the run log" % secret
+
+
+def test_redaction_covers_identifiers_inside_paths_and_errors():
+    text = run_pipeline.format_run(_report_with_pii())
+    assert "<prospect:" in text
+    assert "timed out" in text, "the error itself must survive redaction"
+    assert "audit.pdf" in text
+
+
+def test_the_redaction_tag_is_stable_within_a_run():
+    """A reader has to be able to follow one prospect through the log."""
+    text = run_pipeline.format_run(_report_with_pii())
+    tags = set(re.findall(r"<prospect:[0-9a-f]{8}>", text))
+    acme = run_pipeline.redact("acme.com", {"acme.com"})
+    assert acme in tags
+    assert text.count(acme) >= 2
+
+
+def test_findings_still_readable_after_redaction():
+    """The point of the log is to show what happened."""
+    text = run_pipeline.format_run(_report_with_pii())
+    assert "95% of your traffic already knew you" in text
+    assert "dry-run" in text
+
+
+def test_reveal_is_opt_in_for_local_runs():
+    text = run_pipeline.format_run(_report_with_pii(), reveal=True)
+    assert "Jordan Alvarez" in text
+
+
+# --- the internal review channel -------------------------------------------
+
+def test_review_marker_does_not_contain_the_domain():
+    m = run_pipeline.review_marker(lead(domain="acme.com"))
+    assert "acme" not in m
+    assert m.startswith("ref-")
+
+
+def test_review_marker_is_stable_per_lead():
+    a = run_pipeline.review_marker(lead(ts="100.0", domain="acme.com"))
+    b = run_pipeline.review_marker(lead(ts="100.0", domain="acme.com"))
+    c = run_pipeline.review_marker(lead(ts="101.0", domain="acme.com"))
+    assert a == b and a != c
+
+
+def test_the_review_run_posts_internally_not_to_the_prospect(monkeypatch):
+    """With the repo public, artefacts cannot leave via logs or artifacts, so
+    the review run delivers them to an internal channel instead."""
+    monkeypatch.setattr(run_pipeline.collect, "run",
+                        lambda *a, **k: (_evidence(), "reused"))
+    monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
+    monkeypatch.setattr(run_pipeline.dossier_mod, "build",
+                        lambda *a, **k: {"company": {}, "unknown_fields": [],
+                                         "research_urls": {}, "limits": [],
+                                         "pages_fetched": []})
+    msg = {"ts": "100.0", "text": "*Appointment booked from the SEO Funnel*\n"
+                                  "*Client's name:* Jordan\n"
+                                  "*Your business website:* <https://acme.com>\n"
+                                  "*What type of business do you run?:* Home services"}
+    client = FakeSlack(messages=[msg])
+    report = run_pipeline.run(client=client, channel="C_PIPELINE",
+                              review_channel="C_REVIEW", chrome=False,
+                              probe=False, max_age_hours=0)
+    posted = [(m, p) for m, p in client.calls if m == "chat.postMessage"]
+    assert posted, "the review run must actually deliver the artefacts"
+    assert all(p["channel"] == "C_REVIEW" for _, p in posted)
+    assert all("thread_ts" not in p for _, p in posted)
+    assert report["results"][0]["posting"]["status"] == "review-posted"
+
+
+def test_the_review_run_never_reacts_on_the_prospect_message(monkeypatch):
+    monkeypatch.setattr(run_pipeline.collect, "run",
+                        lambda *a, **k: (_evidence(), "reused"))
+    monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
+    msg = {"ts": "100.0", "text": "*Appointment booked from the SEO Funnel*\n"
+                                  "*Your business website:* <https://acme.com>"}
+    client = FakeSlack(messages=[msg])
+    run_pipeline.run(client=client, channel="C_PIPELINE",
+                     review_channel="C_REVIEW", chrome=False, probe=False,
+                     max_age_hours=0)
+    assert "reactions.add" not in [m for m, _ in client.calls]
+
+
+def test_arming_posting_disables_the_review_path(monkeypatch):
+    """Once armed, artefacts go to the prospect thread. Doing both would post
+    every prospect's brief twice."""
+    monkeypatch.setenv(post_mod.ARMED_ENV, "1")
+    monkeypatch.setattr(run_pipeline.collect, "run",
+                        lambda *a, **k: (_evidence(), "reused"))
+    monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
+    msg = {"ts": "100.0", "text": "*Appointment booked from the SEO Funnel*\n"
+                                  "*Your business website:* <https://acme.com>"}
+    client = FakeSlack(messages=[msg])
+    run_pipeline.run(client=client, channel="C_PIPELINE",
+                     review_channel="C_REVIEW", do_post=True, chrome=False,
+                     probe=False, max_age_hours=0)
+    posted = [p for m, p in client.calls if m == "chat.postMessage"]
+    assert posted and all(p["channel"] == "C_PIPELINE" for p in posted)
 
 
 def test_format_run_shows_skips_and_errors():
