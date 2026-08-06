@@ -37,6 +37,8 @@ class FakeSlack:
         self.calls.append((method, params or {}))
         if method == "conversations.replies":
             return {"messages": self._replies}
+        if method == "files.getUploadURLExternal":
+            return {"upload_url": "https://files.slack.test/u", "file_id": "F1"}
         return {"ok": True}
 
 

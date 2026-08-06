@@ -186,7 +186,8 @@ class Poster:
     # --- the published bundle ----------------------------------------------
 
     def publish(self, thread_ts, *, summary, pdf_path=None, dossier_text="",
-                script_text="", business_name="", force=False):
+                script_text="", business_name="", force=False,
+                script_docx=None):
         """Post the three artefacts into one thread, once.
 
         Order matters: the PDF goes first so that if a later call fails, the
@@ -202,24 +203,51 @@ class Poster:
                                                    "this thread",
                     "planned": self.planned}
 
-        did = []
-        if pdf_path and os.path.exists(pdf_path):
-            self.upload_file(thread_ts, pdf_path,
-                             "AI Search Visibility Audit -- %s"
-                             % (business_name or ""), summary)
-            did.append("audit pdf")
-        else:
-            self.post_text(thread_ts, summary)
-            did.append("summary")
+        # Each artefact is delivered independently. A failure in one used to
+        # abort the rest AND skip the reaction, leaving a half-posted thread
+        # that the next run would skip as "already replied" -- so the missing
+        # piece never arrived. Now a failure is recorded and the others go.
+        did, failed = [], []
 
-        for label, body in (("dossier", dossier_text), ("script", script_text)):
-            if body:
-                self.post_text(thread_ts, _chunk_header(label) + body)
+        def _deliver(label, fn):
+            try:
+                fn()
                 did.append(label)
+            except Exception as e:
+                failed.append("%s: %s" % (label, e))
 
-        self.mark(thread_ts)
+        if pdf_path and os.path.exists(pdf_path):
+            _deliver("audit pdf", lambda: self.upload_file(
+                thread_ts, pdf_path,
+                "SEO & AI Visibility Audit -- %s" % (business_name or ""),
+                summary))
+        else:
+            _deliver("summary", lambda: self.post_text(thread_ts, summary))
+
+        if dossier_text:
+            _deliver("dossier", lambda: self.post_text(
+                thread_ts, _chunk_header("dossier") + dossier_text))
+
+        # The script ships as a Word document when one was built: a closer
+        # reads it minutes before a call, often on a phone, and a collapsed
+        # code block is the worst container for that. The fenced text is the
+        # fallback so the script is never simply missing.
+        if script_docx and os.path.exists(script_docx):
+            _deliver("script docx", lambda: self.upload_file(
+                thread_ts, script_docx,
+                "Sales Call Brief -- %s" % (business_name or ""),
+                ":dart: *Sales call brief* (internal)"))
+        if "script docx" not in did and script_text:
+            _deliver("script", lambda: self.post_text(
+                thread_ts, _chunk_header("script") + script_text))
+
+        try:
+            self.mark(thread_ts)
+        except Exception as e:
+            failed.append("reaction: %s" % e)
+
         return {"status": "dry-run" if self.dry_run else "posted",
-                "posted": did, "planned": self.planned}
+                "posted": did, "failed": failed, "planned": self.planned}
 
 
 def _chunk_header(label):

@@ -1,3 +1,7 @@
 # Phase 1 + 2a runtime and test dependencies. Everything else is stdlib.
 pytest==9.1.1
 pymupdf==1.28.0
+# The sales script ships as a Word document: a closer reads it on a phone
+# minutes before a call, and a collapsed Slack code block is the worst
+# possible container for that.
+python-docx==1.2.0

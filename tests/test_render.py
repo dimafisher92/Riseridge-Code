@@ -78,6 +78,41 @@ def test_stripping_removes_tokens_inside_absent_section():
     assert "{{" not in render.strip_absent_sections(h, present=set())
 
 
+# --- section numbering -----------------------------------------------------
+
+def test_sections_are_numbered_in_document_order():
+    h = "<!--NUM--> A <!--NUM--> B <!--NUM--> C"
+    assert render.number_sections(h) == "01 A 02 B 03 C"
+
+
+def test_numbering_skips_sections_the_gate_removed():
+    """The numbers cannot live in the templates. A section drops when its
+    evidence is absent, so numbering has to happen after the gate or the
+    surviving sections read 01, 03, 04 -- or worse, two of them read 05."""
+    h = ("<!--SECTION:a--><!--NUM--><!--/SECTION:a-->"
+         "<!--SECTION:b--><!--NUM--><!--/SECTION:b-->"
+         "<!--SECTION:c--><!--NUM--><!--/SECTION:c-->")
+    out = render.number_sections(render.strip_absent_sections(h, {"a", "c"}))
+    assert out == "0102"
+
+
+def test_every_numbered_section_template_uses_the_marker():
+    """A template that hardcodes its own number silently reintroduces the
+    collision, and only a rendered PDF would show it."""
+    import glob
+    import os
+    for path in sorted(glob.glob(os.path.join(render.SECTIONS, "*.html"))):
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+        for line in text.splitlines():
+            if 'class="eyebrow">' not in line:
+                continue
+            head = line.split('class="eyebrow">', 1)[1].lstrip()
+            assert not head[:1].isdigit(), (
+                "%s hardcodes a section number; use <!--NUM-->"
+                % os.path.basename(path))
+
+
 # --- token gate -----------------------------------------------------------
 
 def test_assert_no_tokens_passes_on_clean_html():
@@ -286,7 +321,7 @@ def _letter_spaced_vendor_pdf(tmp_path, name, vendor_text):
     out = render.build_html(e, {"business_name": "Example", "domain": "example.com",
                                 "report_date": "August 2026"},
                             section_files=["01_cover.html"])
-    marker = '<div class="eyebrow">AI Search Visibility Audit</div>'
+    marker = '<div class="eyebrow">SEO &amp; AI Visibility Audit</div>'
     assert marker in out  # fail loudly if 01_cover.html ever changes shape
     out = out.replace(marker, '<div class="eyebrow">%s</div>' % vendor_text, 1)
     hp = tmp_path / (name + ".html")

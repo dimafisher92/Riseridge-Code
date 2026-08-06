@@ -182,6 +182,16 @@ def impact_lines(ev, finding_keys, anchor=None):
     return out
 
 
+# Shared by the plain-text and .docx renderers so the two cannot drift.
+PRESENT_STEPS = (
+    "Play back their frustration in their own words.",
+    "Show the one finding above, with the number. Let it land.",
+    "Show who is winning those searches instead of them.",
+    "Present the 90-day plan as sequence, not scope.",
+    "Anchor on the recommended tier. Do not open with the cheapest.",
+)
+
+
 # --- assembly ---------------------------------------------------------------
 
 def build(lead, *, evidence=None, dossier=None, recommendation=None,
@@ -267,11 +277,8 @@ def build(lead, *, evidence=None, dossier=None, recommendation=None,
 
     add("")
     add("HOW TO PRESENT THE OFFER")
-    add("  1. Play back their frustration in their own words.")
-    add("  2. Show the one finding above, with the number. Let it land.")
-    add("  3. Show who is winning those searches instead of them.")
-    add("  4. Present the 90-day plan as sequence, not scope.")
-    add("  5. Anchor on the recommended tier. Do not open with the cheapest.")
+    for i, step in enumerate(PRESENT_STEPS, 1):
+        add("  %d. %s" % (i, step))
 
     if rec:
         add("")

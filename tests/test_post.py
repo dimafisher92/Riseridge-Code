@@ -157,11 +157,24 @@ def test_an_already_present_reaction_is_not_an_error(monkeypatch):
     assert plan["status"] == "posted"
 
 
-def test_other_reaction_errors_still_raise(monkeypatch):
+def test_a_reaction_failure_is_recorded_not_raised(monkeypatch):
+    """The reaction is a visible marker, never the primary guard. Failing it
+    after the artefacts landed should be reported, not thrown -- aborting
+    there would discard a successful delivery."""
+    monkeypatch.setenv(post.ARMED_ENV, "1")
+    c = FakeClient(fail={"reactions.add": "not_in_channel"})
+    plan = poster(c, dry_run=False).publish("1.1", summary="hello")
+    assert plan["status"] == "posted"
+    assert any("reaction" in f for f in plan["failed"])
+    assert "not_in_channel" in " ".join(plan["failed"])
+
+
+def test_mark_still_raises_to_its_direct_caller(monkeypatch):
+    """publish() absorbs it; the method itself must not hide a real error."""
     monkeypatch.setenv(post.ARMED_ENV, "1")
     c = FakeClient(fail={"reactions.add": "not_in_channel"})
     with pytest.raises(slack.SlackError):
-        poster(c, dry_run=False).publish("1.1", summary="hello")
+        poster(c, dry_run=False).mark("1.1")
 
 
 # --- file upload ------------------------------------------------------------
@@ -273,3 +286,52 @@ def test_force_still_respects_dry_run():
     plan = poster(c).publish("1.1", summary="again", force=True)
     assert plan["status"] == "dry-run"
     assert "chat.postMessage" not in c.methods()
+
+
+# --- one artefact failing must not lose the rest ----------------------------
+
+def test_a_failed_upload_does_not_stop_the_other_artefacts(monkeypatch, tmp_path):
+    """A failure used to abort the remaining posts AND skip the reaction,
+    leaving a half-posted thread the next run would skip as already-replied --
+    so the missing piece never arrived."""
+    monkeypatch.setenv(post.ARMED_ENV, "1")
+    docx = tmp_path / "brief.docx"
+    docx.write_bytes(b"PK fake")
+
+    class NoUploadTarget(FakeClient):
+        def api(self, method, params=None):
+            self.calls.append((method, params or {}))
+            if method == "conversations.replies":
+                return {"messages": []}
+            if method == "files.getUploadURLExternal":
+                return {}
+            return {"ok": True}
+
+    c = NoUploadTarget()
+    plan = poster(c, dry_run=False).publish(
+        "1.1", summary="s", dossier_text="D", script_docx=str(docx))
+    assert "dossier" in plan["posted"], "the dossier must still be delivered"
+    assert any("script docx" in f for f in plan["failed"])
+    assert "reactions.add" in c.methods(), "the thread must still be marked"
+
+
+def test_the_script_docx_is_uploaded_instead_of_a_code_block(monkeypatch, tmp_path):
+    monkeypatch.setenv(post.ARMED_ENV, "1")
+    docx = tmp_path / "brief.docx"
+    docx.write_bytes(b"PK fake")
+    c = FakeClient()
+    plan = poster(c, dry_run=False).publish(
+        "1.1", summary="s", script_text="PLAIN TEXT SCRIPT",
+        script_docx=str(docx), business_name="Acme")
+    assert "script docx" in plan["posted"]
+    texts = [p.get("text", "") for m, p in c.calls if m == "chat.postMessage"]
+    assert not any("PLAIN TEXT SCRIPT" in t for t in texts), \
+        "the fenced text is a fallback, not a duplicate"
+
+
+def test_the_text_script_is_the_fallback_when_there_is_no_docx(monkeypatch):
+    monkeypatch.setenv(post.ARMED_ENV, "1")
+    c = FakeClient()
+    plan = poster(c, dry_run=False).publish("1.1", summary="s",
+                                            script_text="PLAIN TEXT SCRIPT")
+    assert "script" in plan["posted"]

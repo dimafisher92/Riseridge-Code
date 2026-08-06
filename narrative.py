@@ -465,6 +465,32 @@ def _audit_rows(audit):
     return "".join(out)
 
 
+STATUS_WORD = {"ok": "Clean", "warn": "Needs work", "problem": "Problem"}
+
+
+def _audit_all_rows(audit):
+    """Every check, passes included.
+
+    The priority table above shows what to fix. This shows what was examined,
+    which is what makes it a full audit rather than a list of complaints -- a
+    prospect should be able to see the clean results too.
+    """
+    if not audit:
+        return ""
+    out = []
+    for c in sorted(audit.get("checks", []),
+                    key=lambda c: ({"problem": 0, "warn": 1, "ok": 2}[c["status"]],
+                                   c["label"])):
+        result = ("All %s clear" % render.fmt(c["checked"])
+                  if c["failing"] == 0 else
+                  "%s of %s affected" % (render.fmt(c["failing"]),
+                                         render.fmt(c["checked"])))
+        out.append("<tr><td>%s</td><td>%s</td><td>%s</td></tr>"
+                   % (_esc(c["label"]), result,
+                      STATUS_WORD.get(c["status"], c["status"])))
+    return "".join(out)
+
+
 def _ai_rows(platforms):
     out = []
     for p in platforms:
@@ -697,6 +723,7 @@ def build_tokens(ev, *, now=None):
         "audit_passed": (str(audit.get("passed_count"))
                          if audit and audit.get("passed_count") else ""),
         "site_audit_rows_html": _audit_rows(audit),
+        "site_audit_all_rows_html": _audit_all_rows(audit),
         "site_audit_intro_html": (
             _esc(audit.get("scope_note", "")) if audit else ""),
         "site_audit_scope_html": _esc(
