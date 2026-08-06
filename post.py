@@ -1,8 +1,13 @@
 """Publish the three artefacts into the lead's Slack thread.
 
 This is the only module in the pipeline that writes to Slack, and it is off by
-default. The spec's rule stands: nothing reaches a prospect thread without
-explicit approval.
+default.
+
+The destination is the lead's thread in #sales-pipeline, which is a private,
+internal channel fed by a Zapier app. The prospect is not in it. An earlier
+version of this module treated that thread as prospect-facing and guarded it
+accordingly; that was a misreading of the spec, which says plainly that all
+three artefacts go into the lead's thread there.
 
 **Idempotency is server-side, deliberately.** The spec put the ledger in
 `state/leads.json`. That cannot work here. Runners are ephemeral, so the file
@@ -74,10 +79,10 @@ class Poster:
         self.channel = channel or slack.config("SALES_PIPELINE_CHANNEL")
         self.bot_user_id = bot_user_id or slack.config("SLACK_BOT_USER_ID")
         self.dry_run = dry_run
-        # An internal review channel is the operator's own space, not a
-        # prospect's thread. The arming switch guards the irreversible case --
-        # a wrong message in front of a prospect -- so it does not apply here.
-        # dry_run still does.
+        # `internal` marks a channel the prospect cannot see. #sales-pipeline
+        # is one, so the arming switch does not apply to it -- posting there is
+        # visible only to the sales team and is the spec's intended behaviour.
+        # dry_run still applies either way.
         self.internal = internal
         self._upload = upload or _raw_upload
         self.planned = []
@@ -210,59 +215,6 @@ class Poster:
 
         self.mark(thread_ts)
         return {"status": "dry-run" if self.dry_run else "posted",
-                "posted": did, "planned": self.planned}
-
-
-    # --- internal review ----------------------------------------------------
-
-    def already_reviewed(self, marker, pages=1):
-        """True if this marker already appears in the review channel.
-
-        The prospect-thread guard cannot be used here: a review post is a new
-        top-level message, so there is no thread to inspect. The marker is a
-        non-reversible tag derived from the lead, embedded in the message, so a
-        re-run finds its own previous post without the channel ever carrying
-        the prospect's name.
-        """
-        try:
-            for msg in self.client.history(self.channel, pages=pages):
-                if marker in (msg.get("text") or ""):
-                    return True
-        except slack.SlackError as e:
-            raise PostError("cannot read review channel: %s" % e)
-        return False
-
-    def publish_review(self, marker, *, summary, pdf_path=None,
-                       dossier_text="", script_text="", business_name=""):
-        """Post the bundle to an internal channel instead of a prospect thread.
-
-        This is what makes the operator's review run possible when the
-        repository is public: build logs and artifacts are world-readable
-        there, so the artefacts have to reach the operator through Slack.
-        """
-        if self.already_reviewed(marker):
-            return {"status": "skipped",
-                    "reason": "already in the review channel",
-                    "planned": self.planned}
-
-        head = "%s\n_Review copy -- not posted to the prospect._ `%s`" % (
-            summary, marker)
-        did = []
-        if pdf_path and os.path.exists(pdf_path):
-            self.upload_file(None, pdf_path,
-                             "AI Search Visibility Audit -- %s"
-                             % (business_name or ""), head)
-            did.append("audit pdf")
-        else:
-            self.post_text(None, head)
-            did.append("summary")
-
-        for label, body in (("dossier", dossier_text), ("script", script_text)):
-            if body:
-                self.post_text(None, _chunk_header(label) + body)
-                did.append(label)
-
-        return {"status": "dry-run" if self.dry_run else "review-posted",
                 "posted": did, "planned": self.planned}
 
 

@@ -4,8 +4,8 @@ Dry-run in two independent dimensions, both off by default:
 
   --apply   allows collect.py's one write, creating a Site Explorer project
             against the operator's paid quota. One per unique domain.
-  --post    allows writing into the prospect's Slack thread, and additionally
-            requires RR_POSTING_ARMED in the environment.
+  --post    allows writing into the lead's thread in #sales-pipeline, which
+            is a private internal channel -- the prospect is not in it.
 
 Scope is new bookings only, per the spec: no backfill. That is enforced by
 `--max-age-hours` rather than by a ledger, because a hosted runner has no
@@ -277,21 +277,10 @@ def summary_for(result, lead):
     return "\n".join(lines)
 
 
-def review_marker(lead):
-    """A non-reversible per-lead tag for the review channel.
-
-    Lets a re-run find its own previous review post without the channel
-    carrying the prospect's name or domain in the marker itself.
-    """
-    raw = "%s|%s" % (lead.domain or "", lead.thread_ts or "")
-    return "ref-" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:10]
-
-
 def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
-        client=None, channel=None, chrome=True, limit=0, review_channel=None):
+        client=None, channel=None, chrome=True, limit=0):
     client = client or slack.SlackClient()
     channel = channel or slack.config("SALES_PIPELINE_CHANNEL")
-    review_channel = review_channel or slack.config("RR_REVIEW_CHANNEL")
     if not channel:
         raise SystemExit("SALES_PIPELINE_CHANNEL is not set")
 
@@ -300,18 +289,14 @@ def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
     if limit:
         fresh = fresh[:limit]
 
+    # #sales-pipeline is a private, internal channel fed by a Zapier app -- the
+    # prospect is not in it, and the spec's own instruction is that all three
+    # artefacts go into the lead's thread there. So the thread IS the internal
+    # destination, and an earlier separate "review channel" was solving a
+    # problem that does not exist.
     poster = post_mod.Poster(client=client, channel=channel,
                              bot_user_id=slack.config("SLACK_BOT_USER_ID"),
-                             dry_run=not do_post)
-    # The review path exists because this repository is public: build logs and
-    # artifacts are world-readable there, so prospect artefacts cannot leave
-    # the runner that way. They go to an internal Slack channel instead.
-    reviewer = None
-    if review_channel and not do_post:
-        reviewer = post_mod.Poster(
-            client=client, channel=review_channel,
-            bot_user_id=slack.config("SLACK_BOT_USER_ID"),
-            dry_run=False, internal=True)
+                             dry_run=not do_post, internal=True)
 
     results = []
     for lead in fresh:
@@ -323,32 +308,23 @@ def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
                  "errors": ["fatal: " + traceback.format_exc(limit=3)],
                  "artefacts": {}, "findings": []}
         try:
-            if reviewer is not None:
-                r["posting"] = reviewer.publish_review(
-                    review_marker(lead),
-                    summary=summary_for(r, lead),
-                    pdf_path=r["artefacts"].get("pdf"),
-                    dossier_text=r.get("dossier_text", ""),
-                    script_text=r.get("script_text", ""),
-                    business_name=business_name_for(lead))
-            else:
-                r["posting"] = poster.publish(
-                    lead.thread_ts,
-                    summary=summary_for(r, lead),
-                    pdf_path=r["artefacts"].get("pdf"),
-                    dossier_text=r.get("dossier_text", ""),
-                    script_text=r.get("script_text", ""),
-                    business_name=business_name_for(lead))
+            r["posting"] = poster.publish(
+                lead.thread_ts,
+                summary=summary_for(r, lead),
+                pdf_path=r["artefacts"].get("pdf"),
+                dossier_text=r.get("dossier_text", ""),
+                script_text=r.get("script_text", ""),
+                business_name=business_name_for(lead))
         except Exception as e:
             r["errors"].append("post: %s" % e)
         results.append(r)
 
     notes = []
-    if results and not do_post and not review_channel:
+    if results and not do_post:
         notes.append(
-            "Artefacts were built but delivered nowhere: posting is off and no "
-            "review channel is set. On a hosted runner they are discarded with "
-            "the runner -- set RR_REVIEW_CHANNEL so they reach Slack.")
+            "Artefacts were built but delivered nowhere: this was a dry run. "
+            "On a hosted runner they are discarded with the runner -- pass "
+            "--post so they reach the lead's thread.")
 
     return {"scanned": len(found), "selected": len(fresh),
             "skipped": [{"domain": l.domain, "name": l.name, "reason": why}
@@ -428,9 +404,6 @@ def main():
     ap.add_argument("--no-probe", action="store_true")
     ap.add_argument("--no-chrome", action="store_true",
                     help="build HTML but skip the PDF render")
-    ap.add_argument("--review-channel", default="",
-                    help="post artefacts to this internal channel instead of "
-                         "the prospect thread (the review run)")
     ap.add_argument("--reveal", action="store_true",
                     help="print prospect names and domains. Local use only: "
                          "hosted run logs are world-readable on a public repo")
@@ -439,7 +412,7 @@ def main():
 
     report = run(pages=a.pages, max_age_hours=a.max_age_hours, apply=a.apply,
                  do_post=a.post, probe=not a.no_probe, chrome=not a.no_chrome,
-                 limit=a.limit, review_channel=a.review_channel)
+                 limit=a.limit)
     if a.json:
         text = json.dumps(report, indent=2, default=str)
         print(text if a.reveal else redact(text, _identifiers(report)))

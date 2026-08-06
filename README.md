@@ -61,9 +61,9 @@ is always reused, never re-created.
 A booked lead in `#sales-pipeline` becomes three artefacts without an operator
 present.
 
-    python run_pipeline.py                       # dry run: no writes at all
-    python run_pipeline.py --review-channel C123  # deliver to an internal channel
-    python run_pipeline.py --post --apply         # armed (see the two switches)
+    python run_pipeline.py               # dry run: no writes at all
+    python run_pipeline.py --post        # deliver into the lead's thread
+    python run_pipeline.py --post --apply  # and create the Site Explorer project
 
 - `dossier.py` company scale from the prospect's own public site
 - `aiprobe.py` AI visibility via official provider APIs, with a vertical cache
@@ -94,6 +94,13 @@ server-side: `conversations.replies` answers "has this bot already replied in
 this thread", which is authoritative even on a fresh runner. The reaction is
 kept as the visible marker for humans scanning the channel.
 
+Not a difference, but worth stating because an earlier version of this code got
+it wrong: **`#sales-pipeline` is private and internal.** It is fed by a Zapier
+app and the prospect is not in it, so the lead's thread is an internal surface
+and is exactly where the spec says all three artefacts belong. There is no
+separate review channel and no prospect-visible destination anywhere in this
+pipeline.
+
 **Section 3, the judgment section.** The spec is right that it cannot be
 templated. What a rule can do honestly is choose which real finding leads.
 Each candidate carries its own qualifying threshold, and among those that
@@ -109,14 +116,16 @@ Both writes are off by default and are independent.
 | switch | guards | needs |
 |---|---|---|
 | `--apply` | creating a Site Explorer project (paid quota) | the flag |
-| `--post` | writing into a prospect's Slack thread | the flag **and** `RR_POSTING_ARMED` |
+| `--post` | delivering artefacts into the lead's thread | the flag |
 
-Posting needs two switches to agree because the failure mode is
-unrecoverable: a wrong message in a prospect's thread cannot be unsent.
-Creating a project is recoverable and was authorised per booked prospect, so
-it needs only the one flag.
+`post.py` also supports `RR_POSTING_ARMED`, a second switch it requires before
+writing to a channel the prospect can see. Nothing in this pipeline targets
+one, so it is unused here; the guard stays in place for any future surface
+that is genuinely prospect-facing.
 
-**Scheduled runs pass `--apply`; a manual dispatch has to opt in.** Traffic,
+**Scheduled runs pass `--post` and `--apply`; a manual dispatch has to opt in
+to each.** A schedule that built the artefacts and discarded them with the
+runner would be pointless, and a hand-run stays a dry run by default. Traffic,
 traffic value, authority, trust, position buckets and competitors are all
 warm-only metrics, so without a project a first-time prospect's report drops
 most of its credibility figures. `collect.py` bounds the spend: one project
@@ -134,8 +143,8 @@ it:
 - The pipeline workflow uploads **no build artifact**. Artifacts on a public
   repository are downloadable by anyone with the run URL, and
   `state/prospects/` holds real prospect data.
-- Until posting is armed, artefacts are delivered to an internal Slack channel
-  (`--review-channel` / `RR_REVIEW_CHANNEL`). Slack is the only private
+- Artefacts leave the runner through Slack or not at all, into the lead's
+  thread in the private `#sales-pipeline` channel. Slack is the only private
   channel available to a public-repo runner.
 
 `state/prospects/` and `state/verticals/` stay git-ignored.
@@ -149,11 +158,12 @@ Windows for the same reason as the test workflow — the renderer shells out to
 Chrome. `RR_CHROME` and `RR_CHROME_FLAGS` override the Chrome path if the
 pipeline is ever moved to a Linux runner.
 
-### Arming it
+### Reviewing it
 
-1. Run the workflow by hand with posting off and `RR_REVIEW_CHANNEL` set.
-2. Read all three artefacts in that channel.
-3. Only then set `RR_POSTING_ARMED` and dispatch with `post: true`.
+The hourly schedule delivers into each lead's thread on its own. To see the
+output before trusting it, dispatch by hand with `post: true` and read the
+three artefacts in the thread under that booking. Re-running is safe: the
+already-replied check means a lead is never posted twice.
 
 ## Constraints
 

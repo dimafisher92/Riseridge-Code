@@ -15,7 +15,7 @@ import slack
 @pytest.fixture(autouse=True)
 def clean_env(monkeypatch):
     for key in ("SLACK_BOT_TOKEN", "SALES_PIPELINE_CHANNEL",
-                "SLACK_BOT_USER_ID", "RR_REVIEW_CHANNEL"):
+                "SLACK_BOT_USER_ID"):
         monkeypatch.delenv(key, raising=False)
 
 
@@ -100,12 +100,11 @@ def test_the_poster_reads_its_channel_from_the_environment(monkeypatch, tmp_path
     assert p.bot_user_id == "U_FROM_ENV"
 
 
-def test_the_pipeline_resolves_its_channels_from_the_environment(monkeypatch,
-                                                                 tmp_path):
+def test_the_pipeline_resolves_its_channel_from_the_environment(monkeypatch,
+                                                                tmp_path):
     import run_pipeline
 
     monkeypatch.setenv("SALES_PIPELINE_CHANNEL", "C_PIPELINE")
-    monkeypatch.setenv("RR_REVIEW_CHANNEL", "C_REVIEW")
     monkeypatch.setattr(slack, "DEFAULT_ENV", str(tmp_path / "nope.env"))
 
     class FakeSlack:

@@ -274,24 +274,12 @@ def test_reveal_is_opt_in_for_local_runs():
     assert "Jordan Alvarez" in text
 
 
-# --- the internal review channel -------------------------------------------
+# --- the destination is the lead's own thread --------------------------------
 
-def test_review_marker_does_not_contain_the_domain():
-    m = run_pipeline.review_marker(lead(domain="acme.com"))
-    assert "acme" not in m
-    assert m.startswith("ref-")
-
-
-def test_review_marker_is_stable_per_lead():
-    a = run_pipeline.review_marker(lead(ts="100.0", domain="acme.com"))
-    b = run_pipeline.review_marker(lead(ts="100.0", domain="acme.com"))
-    c = run_pipeline.review_marker(lead(ts="101.0", domain="acme.com"))
-    assert a == b and a != c
-
-
-def test_the_review_run_posts_internally_not_to_the_prospect(monkeypatch):
-    """With the repo public, artefacts cannot leave via logs or artifacts, so
-    the review run delivers them to an internal channel instead."""
+def test_artefacts_go_to_the_leads_thread_in_the_internal_channel(monkeypatch):
+    """#sales-pipeline is private and fed by a Zapier app -- the prospect is not
+    in it. The spec says all three artefacts go into the lead's thread there, so
+    that thread is the internal destination and needs no separate channel."""
     monkeypatch.setattr(run_pipeline.collect, "run",
                         lambda *a, **k: (_evidence(), "reused"))
     monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
@@ -300,48 +288,46 @@ def test_the_review_run_posts_internally_not_to_the_prospect(monkeypatch):
                                          "research_urls": {}, "limits": [],
                                          "pages_fetched": []})
     msg = {"ts": "100.0", "text": "*Appointment booked from the SEO Funnel*\n"
-                                  "*Client's name:* Jordan\n"
-                                  "*Your business website:* <https://acme.com>\n"
-                                  "*What type of business do you run?:* Home services"}
-    client = FakeSlack(messages=[msg])
-    report = run_pipeline.run(client=client, channel="C_PIPELINE",
-                              review_channel="C_REVIEW", chrome=False,
-                              probe=False, max_age_hours=0)
-    posted = [(m, p) for m, p in client.calls if m == "chat.postMessage"]
-    assert posted, "the review run must actually deliver the artefacts"
-    assert all(p["channel"] == "C_REVIEW" for _, p in posted)
-    assert all("thread_ts" not in p for _, p in posted)
-    assert report["results"][0]["posting"]["status"] == "review-posted"
-
-
-def test_the_review_run_never_reacts_on_the_prospect_message(monkeypatch):
-    monkeypatch.setattr(run_pipeline.collect, "run",
-                        lambda *a, **k: (_evidence(), "reused"))
-    monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
-    msg = {"ts": "100.0", "text": "*Appointment booked from the SEO Funnel*\n"
                                   "*Your business website:* <https://acme.com>"}
     client = FakeSlack(messages=[msg])
-    run_pipeline.run(client=client, channel="C_PIPELINE",
-                     review_channel="C_REVIEW", chrome=False, probe=False,
-                     max_age_hours=0)
-    assert "reactions.add" not in [m for m, _ in client.calls]
-
-
-def test_arming_posting_disables_the_review_path(monkeypatch):
-    """Once armed, artefacts go to the prospect thread. Doing both would post
-    every prospect's brief twice."""
-    monkeypatch.setenv(post_mod.ARMED_ENV, "1")
-    monkeypatch.setattr(run_pipeline.collect, "run",
-                        lambda *a, **k: (_evidence(), "reused"))
-    monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
-    msg = {"ts": "100.0", "text": "*Appointment booked from the SEO Funnel*\n"
-                                  "*Your business website:* <https://acme.com>"}
-    client = FakeSlack(messages=[msg])
-    run_pipeline.run(client=client, channel="C_PIPELINE",
-                     review_channel="C_REVIEW", do_post=True, chrome=False,
-                     probe=False, max_age_hours=0)
+    report = run_pipeline.run(client=client, channel="C_PIPELINE", do_post=True,
+                              chrome=False, probe=False, max_age_hours=0)
     posted = [p for m, p in client.calls if m == "chat.postMessage"]
-    assert posted and all(p["channel"] == "C_PIPELINE" for p in posted)
+    assert posted, "the artefacts must actually be delivered"
+    assert all(p["channel"] == "C_PIPELINE" for p in posted)
+    assert all(p["thread_ts"] == "100.0" for p in posted), (
+        "replies belong in the lead's thread, not the channel root")
+    assert report["results"][0]["posting"]["status"] == "posted"
+
+
+def test_the_internal_channel_does_not_require_the_arming_switch(monkeypatch):
+    """RR_POSTING_ARMED guards a prospect-visible surface. This channel is not
+    one, so requiring it here was guarding against nothing."""
+    monkeypatch.delenv(post_mod.ARMED_ENV, raising=False)
+    monkeypatch.setattr(run_pipeline.collect, "run",
+                        lambda *a, **k: (_evidence(), "reused"))
+    monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
+    msg = {"ts": "100.0", "text": "*Appointment booked from the SEO Funnel*\n"
+                                  "*Your business website:* <https://acme.com>"}
+    client = FakeSlack(messages=[msg])
+    report = run_pipeline.run(client=client, channel="C_PIPELINE", do_post=True,
+                              chrome=False, probe=False, max_age_hours=0)
+    assert report["results"][0]["posting"]["status"] == "posted"
+    assert not report["results"][0]["errors"]
+
+
+def test_a_dry_run_still_writes_nothing(monkeypatch):
+    monkeypatch.setattr(run_pipeline.collect, "run",
+                        lambda *a, **k: (_evidence(), "reused"))
+    monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
+    msg = {"ts": "100.0", "text": "*Appointment booked from the SEO Funnel*\n"
+                                  "*Your business website:* <https://acme.com>"}
+    client = FakeSlack(messages=[msg])
+    report = run_pipeline.run(client=client, channel="C_PIPELINE", chrome=False,
+                              probe=False, max_age_hours=0)
+    assert report["results"][0]["posting"]["status"] == "dry-run"
+    assert not any(m == "chat.postMessage" for m, _ in client.calls)
+    assert any("delivered nowhere" in n for n in report["notes"])
 
 
 def test_format_run_shows_skips_and_errors():
@@ -405,16 +391,16 @@ def test_building_artefacts_with_nowhere_to_deliver_them_is_flagged(monkeypatch)
     report = run_pipeline.run(client=FakeSlack(messages=[msg]), channel="C1",
                               chrome=False, probe=False, max_age_hours=0)
     assert any("delivered nowhere" in n for n in report["notes"])
-    assert "RR_REVIEW_CHANNEL" in run_pipeline.format_run(report)
+    assert "--post" in run_pipeline.format_run(report)
 
 
-def test_a_configured_review_channel_produces_no_such_note(monkeypatch):
+def test_posting_produces_no_delivered_nowhere_note(monkeypatch):
     monkeypatch.setattr(run_pipeline.collect, "run",
                         lambda *a, **k: (_evidence(), "reused"))
     monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
     msg = {"ts": "100.0", "text": "*Appointment booked from the SEO Funnel*\n"
                                   "*Your business website:* <https://acme.com>"}
     report = run_pipeline.run(client=FakeSlack(messages=[msg]), channel="C1",
-                              review_channel="C_REVIEW", chrome=False,
-                              probe=False, max_age_hours=0)
+                              do_post=True, chrome=False, probe=False,
+                              max_age_hours=0)
     assert report["notes"] == []
