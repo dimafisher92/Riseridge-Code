@@ -6,14 +6,20 @@ name: prospect pipeline
 # Slack's callback, and there isn't one. The bot already has channels:history,
 # so reading on a schedule needs no new infrastructure and no inbound surface.
 #
-# Windows, not Linux, for the same reason as tests.yml: the PDF renderer shells
-# out to Chrome and Chrome is preinstalled on the Windows image.
+# Ubuntu, unlike tests.yml. tests.yml uses Windows so the PDF tests exercise the
+# operator's real Chrome path rather than skipping. This job has a different
+# constraint: it must actually get a runner. A scheduled windows-latest job was
+# cancelled after waiting 15 minutes unassigned, and Linux runners are far more
+# plentiful. The renderer is portable via RR_CHROME, which is resolved below.
 
 on:
   schedule:
-    # Hourly on the hour, UTC. Booking volume is roughly one a week, so this is
-    # about latency to the call, not throughput.
-    - cron: "0 * * * *"
+    # Hourly at :37, NOT on the hour. The 16:00 run waited 15 minutes for a
+    # runner and was cancelled without ever starting: the top of the hour is
+    # when every cron on the platform fires at once. An off-peak minute is the
+    # documented mitigation, and booking volume (roughly one a week) means the
+    # exact minute is irrelevant to latency.
+    - cron: "37 * * * *"
   workflow_dispatch:
     inputs:
       post:
@@ -36,7 +42,7 @@ concurrency:
 
 jobs:
   run:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 60
 
     steps:
@@ -47,6 +53,24 @@ jobs:
           python-version: "3.12"
 
       - run: pip install -r requirements.txt
+
+      - name: Locate Chrome for the PDF renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Fail loudly here rather than letting every render fail its embed
+          # gate one by one further down.
+          for c in google-chrome google-chrome-stable chromium-browser chromium; do
+            if command -v "$c" >/dev/null 2>&1; then
+              echo "RR_CHROME=$(command -v $c)" >> "$GITHUB_ENV"
+              # Chrome refuses to run as root without this on a CI container.
+              echo "RR_CHROME_FLAGS=--no-sandbox --disable-dev-shm-usage" >> "$GITHUB_ENV"
+              echo "using $(command -v $c)"
+              exit 0
+            fi
+          done
+          echo "No Chrome binary found; the audit PDF cannot be rendered." >&2
+          exit 1
 
       - name: Run the pipeline
         env:
