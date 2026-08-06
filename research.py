@@ -75,6 +75,134 @@ def find_role(rows, person):
     return None
 
 
+def _compact(text):
+    return re.sub(r"[^a-z0-9]", "", (text or "").lower())
+
+
+# Below this, a name fragment is not distinctive enough to identify a company.
+MIN_NAME = 6
+
+
+def is_about(row, company, domain):
+    """Whether a search result is plausibly about THIS company.
+
+    A live run surfaced Trustpilot, Leafsnap and ConsumerHealthDigest reviews
+    of "Clean Nutra" and "Clean Nutraceuticals" as though they belonged to
+    CLEAN Nutritionals -- three different businesses with a shared prefix. A
+    closer repeating another company's rating on a call is exactly the failure
+    this project exists to avoid, so a result has to carry the full compacted
+    company name or the prospect's own domain label to count.
+
+    A shared prefix is not a match: "cleannutra" does not contain
+    "cleannutritionals".
+    """
+    blob = _compact(" ".join([row.get("title", ""), row.get("snippet", ""),
+                              row.get("url", "")]))
+    name = _compact(company)
+    if name and len(name) >= MIN_NAME and name in blob:
+        return True
+    label = _compact((domain or "").split(".")[0])
+    if label and len(label) >= MIN_NAME and label in blob:
+        return True
+    return False
+
+
+def _about_person(row, person):
+    """Whether a result actually concerns the named contact.
+
+    Same failure mode as the company filter: a search for a person returns
+    plenty of other people. The surname has to appear.
+    """
+    if not person:
+        return False
+    parts = [p for p in re.split(r"\s+", person.strip()) if len(p) > 2]
+    if not parts:
+        return False
+    blob = _snippet_blob(row).lower() + " " + (row.get("url") or "").lower()
+    return parts[-1].lower() in blob
+
+
+def briefing(result):
+    """The combined person + company picture, as prose a closer can read.
+
+    This is the point of the module. An earlier version emitted a row of
+    Google search URLs labelled "dig deeper", which is not research -- it is
+    homework handed to someone else. What follows is what the searches
+    actually established, with the sources that established it.
+    """
+    if not result:
+        return []
+
+    lines = []
+    person = result.get("person") or ""
+    company = result.get("company") or ""
+    role = result.get("role") or {}
+
+    if person:
+        if role.get("value"):
+            lines.append("%s is %s at %s." % (person, role["value"], company))
+        elif result.get("person_results"):
+            lines.append(
+                "%s appears in public results connected to %s, but no title "
+                "was stated in any of them -- confirm their role on the call."
+                % (person, company))
+        else:
+            lines.append(
+                "No public professional profile was found for %s. That is "
+                "common for owner-operators and is not itself a signal."
+                % person)
+
+    press = result.get("press") or []
+    followed = result.get("followed") or []
+    if followed:
+        for f in followed[:2]:
+            extract = (f.get("extract") or "").strip()
+            if extract:
+                lines.append("%s reports: %s" % (f.get("domain", "a source"),
+                                                 extract[:220].rstrip() + "..."))
+    elif press:
+        lines.append("Recent coverage: %s."
+                     % "; ".join(p.get("title", "")[:70] for p in press[:2]))
+
+    reviews = result.get("reviews") or []
+    if reviews:
+        lines.append(
+            "Listed or reviewed on %d third-party site%s, which is where an "
+            "assistant is most likely to find them today."
+            % (len(reviews), "" if len(reviews) == 1 else "s"))
+
+    discarded = result.get("results_discarded_as_other_companies") or 0
+    if discarded:
+        lines.append(
+            "%d search result%s discarded as belonging to a different business "
+            "with a similar name -- worth knowing, because their brand is not "
+            "distinctive in search." % (discarded,
+                                        "" if discarded == 1 else "s"))
+
+    if not lines:
+        lines.append("Public search returned nothing usable about this "
+                     "company. Treat the call as pure discovery.")
+    return lines
+
+
+def sources(result, limit=6):
+    """The links that actually contributed, deduped -- not a search-URL dump."""
+    if not result:
+        return []
+    out, seen = [], set()
+    for bucket in ("followed", "press", "reviews", "profiles", "mentions",
+                   "person_results"):
+        for r in result.get(bucket) or []:
+            url = r.get("url")
+            if url and url not in seen:
+                seen.add(url)
+                out.append({"url": url, "domain": r.get("domain", ""),
+                            "title": (r.get("title") or "")[:80]})
+            if len(out) >= limit:
+                return out
+    return out
+
+
 def _dedupe(rows):
     out, seen = [], set()
     for r in rows:
@@ -146,6 +274,14 @@ def run(company, domain, person="", *, search=None, fetch=None, limit=8,
 
     company_rows = _dedupe(company_rows)
     person_rows = _dedupe(person_rows)
+
+    # Discard results that are about some other business with a similar name.
+    # Counted rather than silently dropped, so the dossier can say the search
+    # was noisy instead of implying it found nothing.
+    seen_total = len(company_rows)
+    company_rows = [r for r in company_rows if is_about(r, company, domain)]
+    discarded = seen_total - len(company_rows)
+
     if not company_rows and not person_rows:
         return None
 
@@ -173,6 +309,7 @@ def run(company, domain, person="", *, search=None, fetch=None, limit=8,
                 })
 
     role = find_role(person_rows, person)
+    person_rows = [r for r in person_rows if _about_person(r, person)]
 
     return {
         "company": company,
@@ -181,6 +318,7 @@ def run(company, domain, person="", *, search=None, fetch=None, limit=8,
         "queries_run": len(company_queries(company, domain))
                        + (len(person_queries(person, company)) if person else 0),
         "results_seen": len(company_rows) + len(person_rows),
+        "results_discarded_as_other_companies": discarded,
         "role": role,
         "press": buckets["press"][:5],
         "profiles": buckets["profiles"][:5],

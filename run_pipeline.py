@@ -35,6 +35,7 @@ import post as post_mod
 import pricing
 import render
 import salesscript
+import scriptdoc
 import slack
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "state",
@@ -325,6 +326,16 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
             fh.write(text)
         result["artefacts"]["script"] = path
         result["script_text"] = text
+        # The .docx is what the closer actually opens; the .txt stays as the
+        # plain-text fallback if Word rendering ever fails.
+        try:
+            docx_path = os.path.join(outdir, "sales-call-brief.docx")
+            scriptdoc.build(docx_path, lead, evidence=ev, dossier=dos,
+                            recommendation=rec, findings=findings,
+                            business_name=business_name)
+            result["artefacts"]["script_docx"] = docx_path
+        except Exception as e:
+            result["errors"].append("scriptdoc: %s" % e)
     except Exception as e:
         result["errors"].append("script: %s" % e)
 
@@ -389,10 +400,12 @@ def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
                 pdf_path=r["artefacts"].get("pdf"),
                 dossier_text=r.get("dossier_text", ""),
                 script_text=r.get("script_text", ""),
+                script_docx=r["artefacts"].get("script_docx"),
                 business_name=business_name_for(lead),
                 force=force_repost)
         except Exception as e:
             r["errors"].append("post: %s" % e)
+            r.setdefault("posting", {"status": "failed", "reason": str(e)})
         results.append(r)
 
     notes = []

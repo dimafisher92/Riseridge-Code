@@ -213,6 +213,22 @@ def audit(pages, *, robots_txt=None, sitemap_found=None, base_url=""):
         checks[-1]["checked"] = total_images
         checks[-1]["pct_failing"] = _pct(missing_alt, total_images)
 
+    # Site-wide checks. Only added when actually checked: `None` means the
+    # request was never made, which must not read as a failure.
+    if sitemap_found is not None:
+        check("sitemap", "XML sitemap", 0 if sitemap_found else 1,
+              "A sitemap tells search engines every page worth indexing. "
+              "Without one, discovery depends entirely on internal linking.")
+        checks[-1]["checked"] = 1
+        checks[-1]["pct_failing"] = 0 if sitemap_found else 100
+    if robots_txt is not None:
+        blocks_all = bool(re.search(r"(?im)^\s*disallow:\s*/\s*$", robots_txt))
+        check("robots", "robots.txt", 1 if blocks_all else 0,
+              "A robots.txt that disallows everything hides the whole site "
+              "from search. Present and permissive is what you want.")
+        checks[-1]["checked"] = 1
+        checks[-1]["pct_failing"] = 100 if blocks_all else 0
+
     problems = [c for c in checks if c["status"] == "problem"]
     warnings = [c for c in checks if c["status"] == "warn"]
     passed = [c for c in checks if c["status"] == "ok"]

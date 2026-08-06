@@ -473,8 +473,20 @@ def build(domain, *, business_name="", contact_name="", decision_answer="",
 
     # A real technical/SEO audit of the pages already fetched. Costs nothing
     # extra and fills the evidence block the spec had to leave null.
-    audit = siteaudit.audit(pages, base_url=home_url,
-                            robots_txt=None, sitemap_found=None)
+    # robots.txt and sitemap.xml are core SEO checks and cost one request
+    # each. Passed in rather than fetched inside siteaudit so that module
+    # stays pure and testable.
+    _f = fetch or http_fetch
+    try:
+        r_status, r_body = _f(urllib.parse.urljoin(home_url, "/robots.txt"))
+        s_status, _ = _f(urllib.parse.urljoin(home_url, "/sitemap.xml"))
+    except Exception:
+        r_status, r_body, s_status = None, "", None
+    audit = siteaudit.audit(
+        pages, base_url=home_url,
+        robots_txt=(r_body if r_status == 200 else None),
+        sitemap_found=(True if s_status == 200 else
+                       (False if s_status is not None else None)))
 
     if web and (web.get("role") or {}).get("value") and \
             company["decision_authority"]["value"] is None:
@@ -579,23 +591,14 @@ def format_dossier(d):
         for f in facts:
             out.append("• " + f)
 
-    # --- what the web says ---
+    # --- what the research established, in prose ---
     if web:
-        lines = []
-        for r in (web.get("press") or [])[:3]:
-            lines.append("• %s — %s" % (_slack_link(r["url"], r["title"][:70]),
-                                        r["domain"]))
-        for f in (web.get("followed") or [])[:2]:
-            if f.get("extract"):
-                lines.append("• _%s_" % f["extract"][:180].strip())
-        if web.get("reviews"):
-            lines.append("• Listed on: %s"
-                         % ", ".join(_slack_link(r["url"], r["domain"])
-                                     for r in web["reviews"][:4]))
+        lines = research_mod.briefing(web)
         if lines:
             out.append("")
-            out.append("*What the web says*")
-            out.extend(lines)
+            out.append("*What the research found*")
+            for line in lines:
+                out.append("• " + line)
 
     # --- the site audit, headline only ---
     if audit:
@@ -614,13 +617,17 @@ def format_dossier(d):
         out.append("*Confirm on the call* (not establishable from outside)")
         out.append("• " + ", ".join(gaps))
 
-    # --- links, last, for anyone who wants to go deeper ---
-    urls = d.get("research_urls") or {}
-    if urls:
+    # --- the sources that actually contributed ---
+    #
+    # NOT a row of Google search URLs. An earlier version emitted six canned
+    # searches labelled "dig deeper", which is homework handed to the closer
+    # rather than research. These are the pages the findings above came from.
+    src = research_mod.sources(web) if web else []
+    if src:
         out.append("")
-        out.append("*Dig deeper*  "
-                   + "  ·  ".join(_slack_link(u, k.replace("_", " "))
-                                  for k, u in urls.items()))
+        out.append("*Sources*  "
+                   + "  ·  ".join(_slack_link(x["url"], x["domain"])
+                                  for x in src))
 
     for line in d.get("limits") or []:
         pass

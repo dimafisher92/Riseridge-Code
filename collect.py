@@ -336,12 +336,17 @@ def _safe_domain_component(domain):
     Rejects empty, ".", "..", and anything containing a path separator, so a
     malformed or malicious domain can never write outside
     `state/prospects/<domain>/` or collapse into the shared prospects root.
-    `os.path.basename(domain) != domain` alone catches embedded separators
-    (it splits on the platform separator, so "a/b" and, on Windows, "a\\b"
-    both fail it) but NOT a bare ".." — basename("..") is again "..", so the
-    dot-segment is checked explicitly rather than relied upon implicitly.
+    Both separators are rejected on every platform. `os.path.basename` only
+    splits on the platform's own separator, so on Linux it happily accepts
+    "a\\b" — and this pipeline runs on Linux runners while the evidence it
+    writes is read on Windows, where that same string is a path. A domain is
+    never allowed to contain either character, so checking both costs nothing
+    and removes the platform from the answer. A bare ".." survives basename
+    (basename("..") is ".."), so the dot-segments are checked explicitly.
     """
-    if not domain or domain in (".", "..") or os.path.basename(domain) != domain:
+    if (not domain or domain in (".", "..")
+            or "/" in domain or "\\" in domain
+            or os.path.basename(domain) != domain):
         raise ValueError("unsafe domain: %r" % (domain,))
     return domain
 

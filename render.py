@@ -108,6 +108,28 @@ def strip_absent_tiles(html, tokens):
     return re.sub(r"<!--/?TILE:[a-z0-9_]+-->", "", html, flags=re.I)
 
 
+NUMBER_MARK = re.compile(r"<!--NUM-->")
+
+
+def number_sections(html):
+    """Number the section eyebrows in the order the sections survived.
+
+    The numbers used to be written into each template. That cannot be right
+    here: sections drop when their evidence is absent, so a fixed number either
+    collides with a neighbour or leaves a gap -- the site audit landed as a
+    second "05" sitting ahead of "04". A template now says only that it wants a
+    number; which one it gets is a property of the assembled document, so the
+    renderer decides it after the section gate has run.
+    """
+    n = [0]
+
+    def sub(_):
+        n[0] += 1
+        return "%02d" % n[0]
+
+    return NUMBER_MARK.sub(sub, html)
+
+
 def assert_no_tokens(html):
     left = sorted(set(TOKEN.findall(html)))
     if left:
@@ -135,6 +157,7 @@ def build_html(ev, tokens, section_files=None):
 
     doc = strip_absent_sections(doc, ev.present_sections())
     doc = strip_absent_tiles(doc, tokens)
+    doc = number_sections(doc)
 
     missing = []
 

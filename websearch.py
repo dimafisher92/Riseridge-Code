@@ -19,11 +19,12 @@ import urllib.request
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/122.0 Safari/537.36")
-# Deliberately short. A throttled or silently-dropped request is the
-# common failure here, and 13 searches each waiting 25s across two
-# endpoints is over ten minutes of hanging sockets -- enough to run a
-# job into a runner timeout.
-TIMEOUT = 8
+# Short enough that a throttled endpoint cannot run the job into a runner
+# timeout, long enough that a merely slow one still answers. 25s was too long
+# (thirteen searches of hanging sockets); 8s was too short -- a live run lost
+# the AI section on every lead to "no source could be measured" where 25s had
+# worked an hour earlier.
+TIMEOUT = 15
 
 ENDPOINTS = (
     "https://html.duckduckgo.com/html/?q=%s",
