@@ -314,3 +314,125 @@ def test_a_malformed_stamp_falls_back_to_now():
     ev = evidence.Evidence({"domain": "a.com", "business_name": "A",
                             "generated_at": "not-a-date"})
     assert narrative.build_tokens(ev)["report_date"]
+
+
+# --- the keyless answer-source method --------------------------------------
+
+def source_evidence(present=False):
+    """ai_visibility as probe_sources produces it."""
+    return {"ai_visibility": {
+        "method": "answer-source",
+        "method_note": "Measured from the web sources that rank for each "
+                       "question; it is not a transcript of any assistant.",
+        "questions": ["best plumber in Denver", "who are the top rated plumber"],
+        "topics": [
+            {"question": "best plumber in Denver", "brand_present": present,
+             "brand_rank": 2 if present else None,
+             "competitors_named": ["rivalplumbing"],
+             "aggregator_sources": ["yelp.com"],
+             "business_sources": ["rivalplumbing.com"], "sources_total": 8},
+            {"question": "who are the top rated plumber", "brand_present": False,
+             "brand_rank": None, "competitors_named": [],
+             "aggregator_sources": ["angi.com"], "business_sources": [],
+             "sources_total": 6},
+        ],
+        "summary": {"questions_searched": 2,
+                    "questions_present": 1 if present else 0,
+                    "competitors_named": ["rivalplumbing"],
+                    "aggregator_sources": ["yelp.com", "angi.com"]},
+    }}
+
+
+def test_the_source_method_renders_question_rows_not_engine_rows():
+    ev = ev_of(**source_evidence())
+    t = narrative.build_tokens(ev)
+    assert "What a buyer asks" in t["ai_table_head_html"]
+    assert "AI platform" not in t["ai_table_head_html"]
+    assert "best plumber in Denver" in t["ai_platform_rows_html"]
+
+
+def test_the_source_method_never_claims_an_assistant_was_asked():
+    """It measures the source pool. Saying 'ChatGPT did not name you' would be
+    a claim this method cannot support."""
+    ev = ev_of(**source_evidence())
+    t = narrative.build_tokens(ev)
+    blob = " ".join([t["ai_platform_rows_html"], t["ai_gap_html"],
+                     t["ai_intro_html"], t["finding_body_html"],
+                     t["finding_headline"], t["finding_data_callout_html"]])
+    for engine in ("ChatGPT", "Perplexity", "Gemini", "Copilot"):
+        assert engine not in blob
+
+
+def test_the_method_note_is_printed_with_the_table():
+    ev = ev_of(**source_evidence())
+    t = narrative.build_tokens(ev)
+    assert "not a transcript" in t["ai_method_note_html"]
+
+
+def test_the_engine_method_still_renders_engine_rows():
+    ev = ev_of(ai_visibility={"platforms": [
+        {"platform": "ChatGPT", "brand_named": False, "topics_present": 0,
+         "topics_total": 5, "competitors_named": []}]})
+    t = narrative.build_tokens(ev)
+    assert "AI platform" in t["ai_table_head_html"]
+    assert "ChatGPT" in t["ai_platform_rows_html"]
+    assert t["ai_method_note_html"] == ""
+
+
+def test_absence_from_the_source_pool_is_a_finding():
+    ev = ev_of(**source_evidence(present=False))
+    keys = [f["key"] for f in narrative.findings_for(ev, "Acme")]
+    assert "ai_absence" in keys
+    t = narrative.build_tokens(ev)
+    assert "missing from the answers" in t["finding_headline"]
+
+
+def test_presence_in_the_source_pool_is_not_an_absence_finding():
+    ev = ev_of(**source_evidence(present=True))
+    assert "ai_absence" not in [f["key"] for f in narrative.findings_for(ev, "A")]
+
+
+def test_directories_are_called_out_as_the_opening():
+    ev = ev_of(**source_evidence())
+    t = narrative.build_tokens(ev)
+    assert "directory listings" in t["ai_gap_html"]
+    assert "yelp.com" in t["ai_gap_html"]
+
+
+def test_the_source_section_renders_and_has_no_bare_dashes():
+    ev = ev_of(**source_evidence())
+    assert "ai_visibility" in ev.present_sections()
+    html = render.build_html(ev, narrative.build_tokens(ev))
+    assert "{{" not in html
+    assert ">%s<" % render.DASH not in html.replace(" ", "")
+
+
+def test_no_engine_is_named_anywhere_unless_it_was_individually_measured():
+    """The cover used to list ChatGPT, Perplexity, Gemini, Copilot and Google
+    AI Mode by name, which told the prospect all five were tested. Neither
+    method does that: the keyless one measures a source pool, and the API one
+    covers three engines at most."""
+    ev = ev_of(**source_evidence())
+    html = render.build_html(ev, narrative.build_tokens(ev))
+    # Comments are stripped first: they never render, and the template carries
+    # one that names the engines precisely to explain why they were removed.
+    visible = re.sub(r"<!--.*?-->", "", html, flags=re.S)
+    for engine in ("ChatGPT", "Perplexity", "Gemini", "Copilot", "AI Mode"):
+        assert engine not in visible, "%s named without measuring it" % engine
+
+
+def test_engines_may_be_named_when_they_were_actually_asked():
+    ev = ev_of(ai_visibility={"platforms": [
+        {"platform": "ChatGPT", "brand_named": False, "topics_present": 0,
+         "topics_total": 5, "competitors_named": []}]})
+    html = render.build_html(ev, narrative.build_tokens(ev))
+    assert "ChatGPT" in html
+
+
+def test_the_cover_names_no_engine_at_all():
+    """The cover renders before any evidence is known, so it cannot claim
+    coverage of anything specific."""
+    cover = (TEMPLATES / "sections" / "01_cover.html").read_text(encoding="utf-8")
+    body = re.sub(r"<!--.*?-->", "", cover, flags=re.S)
+    for engine in ("ChatGPT", "Perplexity", "Gemini", "Copilot"):
+        assert engine not in body

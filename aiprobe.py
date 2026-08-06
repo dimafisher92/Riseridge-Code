@@ -2,11 +2,18 @@
 gets named.
 
 The spec's original method drove the operator's logged-in Chrome, because
-consumer app answers are what a prospect's customers actually see. That method
-cannot run on a hosted runner -- there is no logged-in browser -- so the
-automated path uses the official APIs with search grounding instead. The
-difference is real and is stated in the report's own provenance: API answers
-approximate consumer answers, they do not equal them.
+consumer app answers are what a prospect's customers actually see. That cannot
+run on a hosted runner, so there are two automated methods here:
+
+- `probe_sources()` -- the default, and keyless. Measures the web sources that
+  rank for each buyer question, which is the material a search-grounded
+  assistant actually builds its answer from. No API key, no account.
+- `probe()` -- used when provider API keys are configured. Asks the engines
+  directly, which is closer to the original method but still not the consumer
+  app, and costs money per question.
+
+Neither is the consumer app, and both say so in their own provenance rather
+than letting the report imply otherwise.
 
 Two design rules make the result safe to print:
 
@@ -28,6 +35,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
+
+import websearch
 
 STATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "state",
                      "verticals")
@@ -260,10 +269,17 @@ def build_questions(category, location=""):
     return [t.format(category=category, where=where) for t in QUESTION_TEMPLATES]
 
 
+# Below this, a "brand token" is not distinctive enough to test against free
+# text: a one- or two-letter token matches inside ordinary English, so a brand
+# called "A" would flag every question as branded.
+MIN_TOKEN = 3
+
+
 def assert_unbranded(questions, brand_tokens):
     """Guard: a branded question measures brand recall, not discovery."""
     bad = [q for q in questions
-           if any(t and t.lower() in q.lower() for t in brand_tokens)]
+           if any(t and len(t) >= MIN_TOKEN and t.lower() in q.lower()
+                  for t in brand_tokens)]
     if bad:
         raise ProbeError("questions must be unbranded, these name the brand: %s"
                          % "; ".join(bad))
@@ -468,6 +484,139 @@ def probe(business_name, domain, *, vertical, category, location="",
         "questions": questions,
         "platforms": platforms,
         "engines_omitted": skipped,
+    }
+
+
+# --- keyless method: the source pool an AI answer is built from -------------
+#
+# Search-grounded assistants (ChatGPT search, Perplexity, Gemini, Google's AI
+# answers) do not answer from memory -- they retrieve web results for the
+# question and synthesise from those. So the pages that rank for a buyer's
+# question ARE the raw material of the answer, and whether a business appears
+# in that pool is measurable without any API key or account.
+#
+# This is a proxy and is labelled as one everywhere it surfaces. It supports
+# "you are absent from the sources these answers are built from". It does NOT
+# support "ChatGPT did not name you", and nothing in the report says that.
+
+SOURCE_METHOD = "answer-source"
+
+
+def _in_domain(domain, token):
+    """Whether a brand token appears in a hostname.
+
+    Word boundaries are wrong here: hostnames concatenate, so "petermd" has to
+    match inside "getpetermd.com" where a \\b lookbehind sees the "t" of "get"
+    and refuses. Compared with separators stripped from both sides, and only
+    for tokens long enough that containment means something.
+    """
+    flat = re.sub(r"[^a-z0-9]", "", (domain or "").lower())
+    t = re.sub(r"[^a-z0-9]", "", (token or "").lower())
+    return bool(t) and len(t) >= 4 and t in flat
+
+
+def analyse_sources(rows, brand_tokens, competitor_names=()):
+    """One question's source pool: who is in it, and who is not."""
+    brand_rank = None
+    competitors, aggregators, businesses = [], [], []
+
+    for row in rows:
+        domain = row.get("domain", "")
+        title_blob = " ".join([row.get("title", ""), row.get("snippet", ""),
+                               domain.replace(".", " ")])
+        if brand_rank is None and any(_in_domain(domain, t)
+                                      or _mentions(title_blob, t)
+                                      for t in brand_tokens):
+            brand_rank = row.get("rank")
+        for c in competitor_names:
+            if (_in_domain(domain, c) or _mentions(title_blob, c)) \
+                    and c not in competitors:
+                competitors.append(c)
+        if row.get("aggregator"):
+            if domain not in aggregators:
+                aggregators.append(domain)
+        elif domain not in businesses:
+            businesses.append(domain)
+
+    return {
+        "brand_present": brand_rank is not None,
+        "brand_rank": brand_rank,
+        "competitors_named": competitors,
+        "aggregator_sources": aggregators,
+        "business_sources": businesses,
+        "sources_total": len(rows),
+    }
+
+
+def probe_sources(business_name, domain, *, vertical, category, location="",
+                  competitors=(), search=None, cache_base=None, use_cache=True,
+                  now=None, limit=10):
+    """ai_visibility measured from open web sources. No API key needed.
+
+    Returns None when no question could be searched at all, so a blocked or
+    reshaped search omits the section instead of reporting a fabricated zero.
+    """
+    search = search or websearch.search
+    brand = brand_tokens_for(business_name, domain)
+
+    cached = load_cache(vertical, cache_base, now) if use_cache else None
+    if cached and cached.get("results"):
+        questions = cached["questions"]
+        results = {q: cached["results"].get(q, []) for q in questions}
+        probed_at, source = cached["probed_at"], "vertical cache (%s)" % vertical
+    else:
+        questions = build_questions(category, location)
+        assert_unbranded(questions, brand)
+        results, probed_at = {}, _now()
+        for q in questions:
+            try:
+                results[q] = search(q, limit=limit)
+            except Exception:
+                results[q] = []
+        source = "open web search"
+        if any(results.values()) and use_cache:
+            save_cache(vertical, {"vertical": vertical, "category": category,
+                                  "location": location, "probed_at": probed_at,
+                                  "questions": questions, "results": results},
+                       cache_base)
+
+    searched = [q for q in questions if results.get(q)]
+    if not searched:
+        return None
+
+    competitor_names = [c for c in competitors if c]
+    topics, present, all_rivals, all_aggs = [], 0, [], []
+    for q in searched:
+        reading = analyse_sources(results[q], brand, competitor_names)
+        reading["question"] = q
+        topics.append(reading)
+        if reading["brand_present"]:
+            present += 1
+        for c in reading["competitors_named"]:
+            if c not in all_rivals:
+                all_rivals.append(c)
+        for a in reading["aggregator_sources"]:
+            if a not in all_aggs:
+                all_aggs.append(a)
+
+    return {
+        "probed_at": probed_at,
+        "vertical_cache": vertical,
+        "source": source,
+        "method": SOURCE_METHOD,
+        "method_note": (
+            "Measured from the web sources that rank for each question, which "
+            "is the material a search-grounded assistant builds its answer "
+            "from. This shows presence in that source pool; it is not a "
+            "transcript of any assistant's reply."),
+        "questions": [t["question"] for t in topics],
+        "topics": topics,
+        "summary": {
+            "questions_searched": len(topics),
+            "questions_present": present,
+            "competitors_named": all_rivals,
+            "aggregator_sources": all_aggs,
+        },
     }
 
 

@@ -195,17 +195,29 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
                 % (lead.business_type or ""))
         else:
             try:
-                block = aiprobe.probe(
-                    business_name, lead.domain,
-                    vertical=vertical_for(lead), category=category,
-                    competitors=aiprobe.competitor_names_from_evidence(ev_dict))
+                # Keyless by default. The provider APIs are used only when keys
+                # are configured: they cost money per question and still are not
+                # the consumer app, so they are an upgrade rather than the
+                # baseline.
+                rivals = aiprobe.competitor_names_from_evidence(ev_dict)
+                if any(p.available() for p in aiprobe.default_providers()):
+                    block = aiprobe.probe(
+                        business_name, lead.domain,
+                        vertical=vertical_for(lead), category=category,
+                        competitors=rivals)
+                else:
+                    block = aiprobe.probe_sources(
+                        business_name, lead.domain,
+                        vertical=vertical_for(lead), category=category,
+                        competitors=rivals)
                 if block:
                     ev_dict["ai_visibility"] = block
                     collect.write_evidence(ev_dict)
                     ev = evidence_mod.Evidence(ev_dict)
                 else:
                     result["errors"].append(
-                        "aiprobe: no engine answered; the AI section is omitted")
+                        "aiprobe: no source could be measured; the AI section is "
+                        "omitted rather than shown as an empty result")
             except Exception as e:
                 result["errors"].append("aiprobe: %s" % e)
 

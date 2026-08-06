@@ -122,6 +122,9 @@ def _brand_dominance(ev, name):
 
 
 def _ai_absence(ev, name):
+    topics = _g(ev, "ai_visibility.topics") or []
+    if topics:
+        return _ai_absence_from_sources(ev, name, topics)
     platforms = _g(ev, "ai_visibility.platforms") or []
     if not platforms:
         return None
@@ -157,6 +160,53 @@ def _ai_absence(ev, name):
             "are structured in the way these systems can read and cite."),
         "summary": "None of the major AI assistants name the business when "
                    "asked what a buyer in this category should do.",
+    }
+
+
+def _ai_absence_from_sources(ev, name, topics):
+    """Same finding, measured the keyless way.
+
+    Worded to match what was actually checked. It says the business is absent
+    from the pages these answers are built from -- never that an assistant was
+    asked and did not name it, which is a claim this method cannot support.
+    """
+    present = [t for t in topics if t.get("brand_present")]
+    if present:
+        return None
+    rivals, aggs = [], []
+    for t in topics:
+        for c in t.get("competitors_named") or []:
+            if c not in rivals:
+                rivals.append(c)
+        for a in t.get("aggregator_sources") or []:
+            if a not in aggs:
+                aggs.append(a)
+
+    rival_text = (" The pages that do get used name %s."
+                  % _esc(", ".join(rivals[:3])) if rivals else "")
+    return {
+        "key": "ai_absence",
+        "headline": "You are missing from the answers buyers are being given",
+        "body_html": _p(
+            "We took the questions your buyers ask when they have the problem "
+            "and no shortlist &mdash; unbranded, no company names &mdash; and "
+            "looked at the pages an AI assistant pulls from to answer them. "
+            "%s is in none of them.%s" % (_esc(name), rival_text)),
+        "callout_html": _p(
+            "Across %d buyer question%s, %s did not appear once in the sources "
+            "those answers are assembled from."
+            % (len(topics), "" if len(topics) == 1 else "s", _esc(name))),
+        "why_html": _li(
+            "An assistant can only recommend what it can find and cite. Not "
+            "being in the source pool means not being in the answer.",
+            "Buyers who research this way arrive already narrowed down &mdash; "
+            "the answer is the shortlist.",
+            "The businesses that do appear are not necessarily bigger. They are "
+            "published in a form these systems can read and quote."
+            + (" A large share of what is being cited is directory listings, "
+               "which is a gap a real business page can take." if aggs else "")),
+        "summary": "The business does not appear in the sources AI assistants "
+                   "build their answers from for its own category.",
     }
 
 
@@ -306,6 +356,45 @@ def findings_for(ev, name):
 
 # --- section builders -------------------------------------------------------
 
+HEAD_ENGINE = ("<th>AI platform</th><th>Visibility</th><th>Sentiment</th>"
+               "<th>Reading</th>")
+HEAD_SOURCE = ("<th>What a buyer asks</th><th>Are you in the sources</th>"
+               "<th>Who is</th>")
+
+
+def _shorten(question, limit=46):
+    q = question.strip()
+    return q if len(q) <= limit else q[:limit - 1].rstrip() + "…"
+
+
+def _source_rows(topics):
+    """One row per buyer question, from the open-source method.
+
+    Deliberately does NOT claim an assistant said anything. It reports presence
+    in the pool of pages the answer is built from, which is what was measured.
+    """
+    out = []
+    for t in topics:
+        if t.get("brand_present"):
+            rank = t.get("brand_rank")
+            presence = "Yes (source %s)" % rank if rank else "Yes"
+        else:
+            presence = "No"
+        rivals = [c for c in (t.get("competitors_named") or [])]
+        others = [d for d in (t.get("business_sources") or [])][:2]
+        if rivals:
+            who = _esc(", ".join(rivals[:2]))
+        elif others:
+            who = _esc(", ".join(others))
+        elif t.get("aggregator_sources"):
+            who = "Directories only"
+        else:
+            who = "No business named"
+        out.append("<tr><td>%s</td><td>%s</td><td>%s</td></tr>"
+                   % (_esc(_shorten(t.get("question", ""))), presence, who))
+    return "".join(out)
+
+
 def _ai_rows(platforms):
     out = []
     for p in platforms:
@@ -329,7 +418,41 @@ def _ai_rows(platforms):
     return "".join(out)
 
 
+def _ai_source_gap(ev, name):
+    """The specific gap, for the open-source method."""
+    d = ev.data if hasattr(ev, "data") else ev
+    block = (d.get("ai_visibility") or {})
+    topics = block.get("topics") or []
+    summary = block.get("summary") or {}
+    total = summary.get("questions_searched") or len(topics)
+    present = summary.get("questions_present") or 0
+    rivals = summary.get("competitors_named") or []
+    aggs = summary.get("aggregator_sources") or []
+
+    parts = []
+    if present == 0:
+        parts.append(
+            "Across every question we checked, %s does not appear in the pages "
+            "these answers are assembled from." % _esc(name))
+    else:
+        parts.append(
+            "%s appears in the source pool for %d of %d questions, and is "
+            "absent from the rest." % (_esc(name), present, total))
+    if rivals:
+        parts.append("Businesses that do appear include %s."
+                     % _esc(", ".join(rivals[:4])))
+    if aggs:
+        parts.append(
+            "Much of the rest is directory listings &mdash; %s &mdash; which is "
+            "its own opportunity: when the assistant has no strong business "
+            "page to cite, it falls back to aggregators."
+            % _esc(", ".join(aggs[:3])))
+    return _p(" ".join(parts))
+
+
 def _ai_gap(ev, name):
+    if _g(ev, "ai_visibility.topics"):
+        return _ai_source_gap(ev, name)
     platforms = _g(ev, "ai_visibility.platforms") or []
     if not platforms:
         return ""
@@ -427,7 +550,9 @@ def build_tokens(ev, *, now=None):
     summary_items = [f["summary"] for f in ([lead] + rest)][:4]
     plan_1, plan_2, plan_3 = _plan(ev, found)
 
+    ai_block = d.get("ai_visibility") or {}
     platforms = _g(ev, "ai_visibility.platforms") or []
+    topics = _g(ev, "ai_visibility.topics") or []
     paid_pages = paid.get("landing_pages") or []
     paid_kws = paid.get("paid_keywords") or []
 
@@ -468,7 +593,22 @@ def build_tokens(ev, *, now=None):
             for k, v in sc.items() if isinstance(v, dict) and v.get("basis")]),
 
         # --- AI visibility ---
-        "ai_platform_rows_html": _ai_rows(platforms),
+        # Two methods can populate this block and they measure different
+        # things, so the table says which one produced it rather than letting
+        # source-pool presence read as an assistant's verdict.
+        "ai_platform_rows_html": (_source_rows(topics) if topics
+                                  else _ai_rows(platforms)),
+        "ai_table_head_html": HEAD_SOURCE if topics else HEAD_ENGINE,
+        "ai_intro_html": _p(
+            "We asked the questions a buyer asks when they have the problem and "
+            "no shortlist &mdash; unbranded, no company names &mdash; and looked "
+            "at which businesses the answers are built from."
+            if topics else
+            "We put the questions a buyer asks &mdash; unbranded, no company "
+            "names &mdash; to each assistant, and recorded who got named."),
+        "ai_method_note_html": (
+            '<p class="fine">%s</p>' % _esc(ai_block.get("method_note", ""))
+            if topics and ai_block.get("method_note") else ""),
         "ai_gap_html": _ai_gap(ev, name),
 
         # --- traffic and rankings ---

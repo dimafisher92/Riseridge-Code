@@ -66,7 +66,9 @@ present.
     python run_pipeline.py --post --apply  # and create the Site Explorer project
 
 - `dossier.py` company scale from the prospect's own public site
-- `aiprobe.py` AI visibility via official provider APIs, with a vertical cache
+- `websearch.py` keyless web search (no API key, no account)
+- `aiprobe.py` AI visibility: answer-source method by default, provider
+  APIs when keys are set; vertical cache on both
 - `pricing.py` size class → band → tier, with every signal shown
 - `narrative.py` evidence → the report's full token contract
 - `salesscript.py` the closer's brief, plain text for Slack
@@ -81,11 +83,27 @@ quietly approximated.
 
 **AI visibility.** The spec drove the operator's logged-in Chrome, because
 consumer app answers are what a prospect's customers actually see. A hosted
-runner has no logged-in browser, so `aiprobe.py` uses the official provider
-APIs with search grounding and records the difference as a caveat in the
-evidence. A failed engine is omitted, never scored zero — "we could not reach
-Perplexity" and "Perplexity never mentions you" look identical in a table and
-mean opposite things.
+runner has no logged-in browser, so there are two methods, and the default
+needs no API key at all.
+
+`probe_sources()` measures the **answer-source pool**: search-grounded
+assistants do not answer from memory, they retrieve web results for the
+question and synthesise from those, so the pages ranking for a buyer's
+question are the raw material of the answer. Whether a business appears in
+that pool is measurable with open web search and no account. This supports
+"you are absent from the sources these answers are built from"; it does not
+support "ChatGPT did not name you", and nothing in the report says that.
+
+`probe()` asks the provider APIs directly and is used only when keys are
+configured — an upgrade, not the baseline, since it costs money per question
+and is still not the consumer app.
+
+Under both, a failed engine or a blocked search is **omitted, never scored
+zero**: "we could not measure" and "you do not appear" look identical in a
+table and mean opposite things. If nothing can be measured the section drops.
+
+The report states which method produced its figures, and the cover names no
+engine it did not individually test.
 
 **The idempotency ledger.** The spec put it in `state/leads.json`. Runners are
 ephemeral so it would not survive, and committing it back would publish
