@@ -15,6 +15,19 @@ import pricing
 SEP = "-" * 62
 
 
+def _readable(value):
+    """A dossier value as the closer should read it.
+
+    Booleans print as yes/no: a line reading "published prices   False" looks
+    like a bug rather than a fact about the business.
+    """
+    if value is None:
+        return "unknown"
+    if isinstance(value, bool):
+        return "yes" if value else "no"
+    return value
+
+
 def _lead_field(lead, key, default=""):
     if lead is None:
         return default
@@ -195,9 +208,7 @@ def build(lead, *, evidence=None, dossier=None, recommendation=None,
         for key in ("employee_count", "location_count", "years_in_business",
                     "ownership", "platform", "published_prices"):
             f = c.get(key) or {}
-            v = f.get("value")
-            add("  %-18s %s" % (key.replace("_", " "),
-                                "unknown" if v is None else v))
+            add("  %-18s %s" % (key.replace("_", " "), _readable(f.get("value"))))
         unknown = dossier.get("unknown_fields") or []
         if unknown:
             add("  not established: %s" % ", ".join(unknown))

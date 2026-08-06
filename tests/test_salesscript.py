@@ -184,6 +184,15 @@ def test_dossier_fields_appear_with_unknowns_marked():
     assert "not established: ownership" in text
 
 
+def test_boolean_dossier_fields_read_as_yes_or_no():
+    """'published prices   False' looks like a bug rather than a fact about the
+    business."""
+    d = {"company": {"published_prices": {"value": False}}, "unknown_fields": []}
+    text = salesscript.build(lead(), dossier=d)
+    assert "published prices   no" in text
+    assert "False" not in text
+
+
 # --- the closing rule -------------------------------------------------------
 
 def test_the_script_closes_by_forbidding_invented_figures():
