@@ -348,10 +348,17 @@ def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
             r["errors"].append("post: %s" % e)
         results.append(r)
 
+    notes = []
+    if results and not do_post and not review_channel:
+        notes.append(
+            "Artefacts were built but delivered nowhere: posting is off and no "
+            "review channel is set. On a hosted runner they are discarded with "
+            "the runner -- set RR_REVIEW_CHANNEL so they reach Slack.")
+
     return {"scanned": len(found), "selected": len(fresh),
             "skipped": [{"domain": l.domain, "name": l.name, "reason": why}
                         for l, why in skipped],
-            "results": results}
+            "results": results, "notes": notes}
 
 
 def _identifiers(report):
@@ -389,6 +396,8 @@ def format_run(report, *, reveal=False):
     """
     out = ["PIPELINE RUN  scanned %d, selected %d"
            % (report["scanned"], report["selected"])]
+    for note in report.get("notes", []):
+        out.append("  NOTE     %s" % note)
     for s in report["skipped"]:
         out.append("  skipped  %-28s %s" % (s["domain"] or "(no domain)",
                                             s["reason"]))

@@ -392,3 +392,29 @@ def test_the_cleaned_name_reaches_the_report_and_the_thread_summary(monkeypatch)
     assert "Acme Plumbing" in html
     assert "Home |" not in html
     assert "Acme Plumbing" in run_pipeline.summary_for(r, l)
+
+
+def test_building_artefacts_with_nowhere_to_deliver_them_is_flagged(monkeypatch):
+    """On a hosted runner they are discarded with the runner. Silently doing
+    all the work and delivering nothing is the confusing failure."""
+    monkeypatch.setattr(run_pipeline.collect, "run",
+                        lambda *a, **k: (_evidence(), "reused"))
+    monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
+    msg = {"ts": "100.0", "text": "*Appointment booked from the SEO Funnel*\n"
+                                  "*Your business website:* <https://acme.com>"}
+    report = run_pipeline.run(client=FakeSlack(messages=[msg]), channel="C1",
+                              chrome=False, probe=False, max_age_hours=0)
+    assert any("delivered nowhere" in n for n in report["notes"])
+    assert "RR_REVIEW_CHANNEL" in run_pipeline.format_run(report)
+
+
+def test_a_configured_review_channel_produces_no_such_note(monkeypatch):
+    monkeypatch.setattr(run_pipeline.collect, "run",
+                        lambda *a, **k: (_evidence(), "reused"))
+    monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
+    msg = {"ts": "100.0", "text": "*Appointment booked from the SEO Funnel*\n"
+                                  "*Your business website:* <https://acme.com>"}
+    report = run_pipeline.run(client=FakeSlack(messages=[msg]), channel="C1",
+                              review_channel="C_REVIEW", chrome=False,
+                              probe=False, max_age_hours=0)
+    assert report["notes"] == []
