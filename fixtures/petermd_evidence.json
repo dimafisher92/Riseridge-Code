@@ -1,0 +1,87 @@
+{
+  "domain": "getpetermd.com",
+  "business_name": "PeterMD",
+  "generated_at": "2026-07-01T00:00:00Z",
+  "vertical": "mens-trt-clinic",
+  "business_type": "local",
+  "traffic": {
+    "monthly_organic_visits": {"value": 10800, "source": "reference-report", "pulled_at": "2026-07-01"},
+    "ranking_keyword_count": {"value": 3800, "source": "reference-report", "pulled_at": "2026-07-01"},
+    "traffic_value_usd": {"value": 61900, "source": "reference-report", "pulled_at": "2026-07-01"}
+  },
+  "brand_split": {
+    "brand_pct": {"value": 95, "source": "derived", "method": "brand-token match over ranking keywords"},
+    "nonbrand_pct": {"value": 5, "source": "derived", "method": "brand-token match over ranking keywords"}
+  },
+  "position_buckets": {
+    "1-3": {"value": 77},
+    "4-10": {"value": 171},
+    "11-20": {"value": 268},
+    "21-50": {"value": 834},
+    "51-100": {"value": 1700},
+    "source": "reference-report",
+    "pulled_at": "2026-07-01"
+  },
+  "money_keywords": [
+    {"keyword": "enclomiphene", "volume": 90500, "position": 41},
+    {"keyword": "at home testosterone test", "volume": 6600, "position": 54},
+    {"keyword": "buy testosterone online", "volume": 3600, "position": 24},
+    {"keyword": "trt cost", "volume": 2900, "position": 42},
+    {"keyword": "how much does trt cost", "volume": 2900, "position": 51},
+    {"keyword": "testosterone test kit", "volume": 2900, "position": 58},
+    {"keyword": "online testosterone therapy", "volume": 2400, "position": 71},
+    {"keyword": "how to get trt", "volume": 2400, "position": 56}
+  ],
+  "backlinks": {
+    "referring_domains": {"value": 50, "source": "reference-report"},
+    "total_backlinks": {"value": 214, "source": "reference-report"},
+    "authority": {"value": 71.8, "metric_name": "Domain Rating", "source": "reference-report"},
+    "trust": {"value": 5, "metric_name": "Trust Flow", "source": "reference-report"},
+    "top_anchors": [
+      {"anchor": "telegram @seo_anomaly - seo backlinks, pbn, traffic boost, link indexing", "count": 1500}
+    ],
+    "referring_domain_categories": [
+      "B2B agency reviews", "personal finance", "PR industry",
+      "market research", "graduation frames", "travel history", "affiliate software"
+    ]
+  },
+  "competitors": [
+    {"domain": "trtnation.com", "monthly_visits": 21200, "ranking_keywords": 5500},
+    {"domain": "maleexcel.com", "monthly_visits": 1500, "ranking_keywords": 52},
+    {"domain": "novagenix.org", "monthly_visits": 1300, "ranking_keywords": 3600},
+    {"domain": "keeps.com", "monthly_visits": 12400, "ranking_keywords": 95},
+    {"domain": "thencginstitute.com", "monthly_visits": 2400, "ranking_keywords": 9100}
+  ],
+  "ai_visibility": {
+    "probed_at": "2026-07-01T00:00:00Z",
+    "vertical_cache": "mens-trt-clinic",
+    "questions": [
+      "where should I get TRT online",
+      "what's the cheapest online TRT clinic",
+      "where can I get enclomiphene prescribed online"
+    ],
+    "platforms": [
+      {"platform": "Gemini", "brand_named": true, "visibility_pct": 40, "sentiment_pct": 73, "topics_present": 2, "reading": "Present but shallow", "competitors_named": ["TRTNation", "Marek"]},
+      {"platform": "Google AI Mode", "brand_named": true, "visibility_pct": 40, "sentiment_pct": 75, "topics_present": 2, "reading": "Present but shallow", "competitors_named": ["TRTNation"]},
+      {"platform": "ChatGPT", "brand_named": false, "visibility_pct": 20, "sentiment_pct": 65, "topics_present": 1, "reading": "Barely visible", "competitors_named": ["TRTNation", "Marek"]},
+      {"platform": "Perplexity", "brand_named": false, "visibility_pct": 20, "sentiment_pct": 67, "topics_present": 1, "reading": "Barely visible", "competitors_named": ["TRTNation", "Marek"]},
+      {"platform": "Copilot", "brand_named": false, "visibility_pct": 20, "sentiment_pct": 71, "topics_present": 1, "reading": "Barely visible", "competitors_named": ["TRTNation"]}
+    ]
+  },
+  "paid": {
+    "estimated_monthly_spend_usd": {"value": null},
+    "paid_keywords": [],
+    "landing_pages": []
+  },
+  "scorecard": {
+    "content_quality": {"value": 28, "basis": "pages do not answer the questions customers ask; no topical depth signal"},
+    "authority": {"value": 27, "basis": "DR 71.8 across 50 domains, none in health or medical categories; trust flow 5"},
+    "user_experience": {"value": 49, "basis": "site functional but slow; several technical fixes outstanding"},
+    "ai_visibility": {"value": null, "basis": "not scored in the reference report"}
+  },
+  "technical": {
+    "ai_crawler_access": {"value": null},
+    "structured_data": {"value": null},
+    "core_web_vitals": {"value": null}
+  }
+}

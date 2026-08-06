@@ -1,0 +1,155 @@
+/* RiseRidge audit report. US Letter, print-first. */
+@page { size: Letter; margin: 0; }
+
+:root {
+  --pine:  #1E3A2E;
+  --brass: #A9874E;
+  --ink:   #15140F;
+  --ivory: #F4F0E8;
+  --mute:  #56514a;
+  --faint: #8a8276;
+  --rule:  #d4cfc4;
+  --bad:   #8c3b2f;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: 'Hanken Grotesk', Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.55;
+  color: var(--ink);
+  background: #fff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* One .page per printed sheet. */
+.page {
+  position: relative;
+  width: 8.5in;
+  min-height: 11in;
+  padding: 0.72in 0.8in 0.62in;
+  page-break-after: always;
+}
+.page:last-of-type { page-break-after: auto; }
+
+.page-footer {
+  position: absolute;
+  left: 0.8in; right: 0.8in; bottom: 0.38in;
+  font-size: 7.5pt;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+  border-top: 1px solid var(--rule);
+  padding-top: 6px;
+}
+
+h1, h2, h3 { font-family: 'Cormorant Garamond', serif; font-weight: 600; margin: 0; }
+h1 { font-size: 30pt; line-height: 1.12; color: var(--pine); }
+h2 { font-size: 21pt; line-height: 1.18; color: var(--pine); margin-bottom: 14px; }
+h3 { font-size: 12pt; color: var(--ink); margin: 18px 0 6px; }
+
+.eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 7.5pt;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 10px;
+}
+
+p { margin: 0 0 10px; }
+strong { font-weight: 600; }
+
+/* Cover */
+.cover { background: var(--pine); color: var(--ivory); }
+.cover h1 { color: var(--ivory); font-size: 34pt; }
+
+.cover .client { font-size: 15pt; color: var(--brass); margin-top: 6px; }
+.cover .lede { max-width: 5.4in; margin-top: 22px; color: #cfd8d0; font-size: 10.5pt; }
+.cover .meta { position: absolute; left: 0.8in; bottom: 1.0in; font-size: 9pt; color: #a9b6ac; }
+.cover .page-footer { color: #7d8c82; border-top-color: #34513f; }
+
+/* Findings list */
+ul.findings { list-style: none; margin: 0; padding: 0; }
+ul.findings > li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 11px;
+}
+ul.findings > li::before {
+  content: ""; position: absolute; left: 0; top: 7px;
+  width: 7px; height: 7px; background: var(--brass);
+}
+
+/* Stat tiles */
+.stats { display: flex; gap: 14px; margin: 16px 0 4px; }
+.stat { flex: 1; background: var(--ivory); padding: 14px 14px 12px; }
+.stat .k {
+  font-family: 'Space Mono', monospace;
+  font-size: 7pt; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--mute);
+}
+.stat .v {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26pt; line-height: 1.05; color: var(--pine); margin-top: 4px;
+}
+
+/* Scorecard */
+.scores { display: flex; gap: 14px; margin: 16px 0; }
+.score { flex: 1; border-top: 3px solid var(--brass); padding-top: 10px; }
+.score .k {
+  font-family: 'Space Mono', monospace; font-size: 7pt;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute);
+}
+.score .v { font-family: 'Cormorant Garamond', serif; font-size: 30pt; color: var(--pine); }
+.score .band { font-size: 8pt; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bad); }
+
+/* Data tables */
+table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+th {
+  font-family: 'Space Mono', monospace;
+  font-size: 7pt; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--mute); text-align: left;
+  border-bottom: 1.5px solid var(--pine);
+  padding: 0 8px 6px 0;
+}
+td {
+  font-size: 9.5pt; padding: 7px 8px 7px 0;
+  border-bottom: 1px solid var(--rule); vertical-align: top;
+}
+td.num { font-family: 'Space Mono', monospace; white-space: nowrap; }
+tr.self td { background: var(--ivory); font-weight: 600; }
+
+/* Callout */
+.callout {
+  background: var(--ivory);
+  border-left: 3px solid var(--brass);
+  padding: 13px 16px;
+  margin: 15px 0;
+  font-size: 9.5pt;
+}
+.callout .t {
+  font-family: 'Space Mono', monospace; font-size: 7pt;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--brass); margin-bottom: 5px;
+}
+
+/* ---- RiseRidge monogram -------------------------------------------------
+   One inline SVG, coloured per surface. On white the back R is deliberately
+   near-tint, as in the brand original; on pine it carries the contrast. */
+.rr-mark { width: 84px; height: 84px; display: block; }
+.rr-signoff { margin: 26px 0 16px; }
+.rr-frame { fill: none; stroke: var(--brass); stroke-width: 2.5; }
+.rr-rule  { stroke: var(--brass); stroke-width: 2; }
+/* White pages: the tint reads as a watermark behind the brass R. */
+.rr-back  { fill: #EFE9DD; }
+.rr-front { fill: var(--brass); }
+.rr-est   { fill: #cfc8ba; }
+
+/* Pine cover: bigger, and the back R becomes the light element. */
+.cover .rr-mark { width: 104px; height: 104px; margin-bottom: 0.62in; }
+.cover .rr-back { fill: var(--ivory); }
+.cover .rr-est  { fill: #8fa295; }

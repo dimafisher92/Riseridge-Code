@@ -1,0 +1,2013 @@
+{
+ "service": "keyword",
+ "path": "/api/v1/keyword_details",
+ "params": {
+  "query": "trt cost",
+  "country_code": "us"
+ },
+ "domain": "trtnation.com",
+ "captured_at": "2026-08-05T07:02:20.681146+00:00",
+ "payload": {
+  "results": {
+   "keyword": "trt cost",
+   "cpc": 5.94,
+   "difficulty": 0,
+   "task_status": {
+    "similarideas_task_status": "SUCCESS",
+    "serps_task_status": "SUCCESS",
+    "autocomplete_task_status": "SUCCESS",
+    "sv_task_status": "SUCCESS",
+    "kd_task_status": "SUCCESS"
+   },
+   "search_volume_data": [
+    {
+     "date": "2025-07-01",
+     "volume": 14800
+    },
+    {
+     "date": "2025-08-01",
+     "volume": 12100
+    },
+    {
+     "date": "2025-09-01",
+     "volume": 12100
+    },
+    {
+     "date": "2025-10-01",
+     "volume": 9900
+    },
+    {
+     "date": "2025-11-01",
+     "volume": 6600
+    },
+    {
+     "date": "2025-12-01",
+     "volume": 5400
+    },
+    {
+     "date": "2026-01-01",
+     "volume": 6600
+    },
+    {
+     "date": "2026-02-01",
+     "volume": 8100
+    },
+    {
+     "date": "2026-03-01",
+     "volume": 8100
+    },
+    {
+     "date": "2026-04-01",
+     "volume": 9900
+    },
+    {
+     "date": "2026-05-01",
+     "volume": 8100
+    },
+    {
+     "date": "2026-06-01",
+     "volume": 8100
+    },
+    {
+     "date": "2026-07-01",
+     "volume": 6600
+    }
+   ],
+   "search_volume": 8100,
+   "global_volume": 12100,
+   "related_keywords": [
+    {
+     "keyword": "trt cost",
+     "hist_sv": [
+      14800,
+      12100,
+      12100,
+      9900,
+      6600,
+      5400,
+      6600,
+      8100,
+      8100,
+      9900,
+      8100,
+      8100,
+      6600
+     ],
+     "kd": null,
+     "sv": 6600,
+     "cpc": 5.94,
+     "ppcd": 64,
+     "position": null
+    },
+    {
+     "keyword": "trt monthly cost",
+     "hist_sv": [
+      880,
+      1300,
+      320,
+      210,
+      170,
+      260,
+      260,
+      260,
+      320,
+      260,
+      320,
+      210
+     ],
+     "kd": null,
+     "sv": 210,
+     "cpc": 8.4,
+     "ppcd": 84,
+     "position": null
+    },
+    {
+     "keyword": "trt price",
+     "hist_sv": [
+      3600,
+      3600,
+      2900,
+      2400,
+      2400,
+      2400,
+      2900,
+      2400,
+      2900,
+      2400,
+      2400,
+      1900
+     ],
+     "kd": null,
+     "sv": 1900,
+     "cpc": 7.05,
+     "ppcd": 92,
+     "position": null
+    },
+    {
+     "keyword": "trt cost per month",
+     "hist_sv": [
+      590,
+      1000,
+      720,
+      720,
+      590,
+      720,
+      720,
+      590,
+      720,
+      590,
+      720,
+      720
+     ],
+     "kd": null,
+     "sv": 720,
+     "cpc": 6.38,
+     "ppcd": 91,
+     "position": null
+    },
+    {
+     "keyword": "hone trt cost",
+     "hist_sv": [
+      590,
+      480,
+      590,
+      390,
+      480,
+      590,
+      880,
+      880,
+      720,
+      880,
+      880,
+      720
+     ],
+     "kd": null,
+     "sv": 720,
+     "cpc": 10.46,
+     "ppcd": 90,
+     "position": null
+    },
+    {
+     "keyword": "trt insurance",
+     "hist_sv": [
+      170,
+      140,
+      110,
+      90,
+      90,
+      90,
+      90,
+      90,
+      140,
+      90,
+      70,
+      90
+     ],
+     "kd": null,
+     "sv": 90,
+     "cpc": 9.72,
+     "ppcd": 56,
+     "position": null
+    },
+    {
+     "keyword": "trt cost with insurance",
+     "hist_sv": [
+      390,
+      320,
+      260,
+      260,
+      210,
+      320,
+      320,
+      320,
+      390,
+      260,
+      320,
+      320
+     ],
+     "kd": null,
+     "sv": 320,
+     "cpc": 4.77,
+     "ppcd": 97,
+     "position": null
+    },
+    {
+     "keyword": "low cost trt",
+     "hist_sv": [
+      110,
+      260,
+      110,
+      140,
+      140,
+      140,
+      210,
+      170,
+      170,
+      140,
+      170,
+      140
+     ],
+     "kd": null,
+     "sv": 140,
+     "cpc": 14.38,
+     "ppcd": 1.0,
+     "position": null
+    },
+    {
+     "keyword": "hone health testosterone cost",
+     "hist_sv": [
+      70,
+      70,
+      110,
+      70,
+      40,
+      40,
+      50,
+      50,
+      70,
+      50,
+      70,
+      70
+     ],
+     "kd": null,
+     "sv": 70,
+     "cpc": 8.95,
+     "ppcd": 65,
+     "position": null
+    },
+    {
+     "keyword": "trt with insurance",
+     "hist_sv": [
+      110,
+      70,
+      90,
+      90,
+      70,
+      70,
+      90,
+      110,
+      90,
+      90,
+      90,
+      90
+     ],
+     "kd": null,
+     "sv": 90,
+     "cpc": 12.02,
+     "ppcd": 95,
+     "position": null
+    },
+    {
+     "keyword": "testosterone injections cost",
+     "hist_sv": [
+      1900,
+      2400,
+      2400,
+      1900,
+      2400,
+      1900,
+      2400,
+      1900,
+      2400,
+      1900,
+      1900,
+      1600
+     ],
+     "kd": null,
+     "sv": 1600,
+     "cpc": 5.24,
+     "ppcd": 91,
+     "position": null
+    },
+    {
+     "keyword": "average cost of trt",
+     "hist_sv": [
+      260,
+      320,
+      260,
+      260,
+      210,
+      260,
+      260,
+      260,
+      260,
+      260,
+      260,
+      320
+     ],
+     "kd": null,
+     "sv": 320,
+     "cpc": 6.5,
+     "ppcd": 71,
+     "position": null
+    },
+    {
+     "keyword": "cost of trt per month",
+     "hist_sv": [
+      210,
+      140,
+      170,
+      320,
+      210,
+      210,
+      320,
+      260,
+      260,
+      260,
+      320,
+      260
+     ],
+     "kd": null,
+     "sv": 260,
+     "cpc": 5.85,
+     "ppcd": 97,
+     "position": null
+    },
+    {
+     "keyword": "defy medical trt cost",
+     "hist_sv": [
+      110,
+      110,
+      110,
+      90,
+      70,
+      70,
+      90,
+      70,
+      70,
+      70,
+      70,
+      90
+     ],
+     "kd": null,
+     "sv": 90,
+     "cpc": 9.31,
+     "ppcd": 64,
+     "position": null
+    },
+    {
+     "keyword": "marek health trt cost",
+     "hist_sv": [
+      320,
+      260,
+      210,
+      210,
+      260,
+      260,
+      320,
+      260,
+      320,
+      260,
+      320,
+      260
+     ],
+     "kd": null,
+     "sv": 260,
+     "cpc": 6.16,
+     "ppcd": 83,
+     "position": null
+    },
+    {
+     "keyword": "trt without insurance",
+     "hist_sv": [
+      70,
+      70,
+      50,
+      50,
+      50,
+      50,
+      40,
+      50,
+      70,
+      70,
+      50,
+      70
+     ],
+     "kd": null,
+     "sv": 70,
+     "cpc": 9.62,
+     "ppcd": 89,
+     "position": null
+    },
+    {
+     "keyword": "optimale trt cost",
+     "hist_sv": [
+      90,
+      110,
+      90,
+      70,
+      70,
+      70,
+      70,
+      70,
+      70,
+      70,
+      70,
+      50
+     ],
+     "kd": null,
+     "sv": 50,
+     "cpc": 24.5,
+     "ppcd": 43,
+     "position": null
+    },
+    {
+     "keyword": "core medical group trt cost",
+     "hist_sv": [
+      70,
+      90,
+      70,
+      50,
+      40,
+      50,
+      50,
+      40,
+      50,
+      50,
+      170,
+      90
+     ],
+     "kd": null,
+     "sv": 90,
+     "cpc": 5.86,
+     "ppcd": 53,
+     "position": null
+    },
+    {
+     "keyword": "fountain trt cost",
+     "hist_sv": [
+      390,
+      390,
+      320,
+      390,
+      320,
+      320,
+      260,
+      210,
+      210,
+      320,
+      390,
+      390
+     ],
+     "kd": null,
+     "sv": 390,
+     "cpc": 8.0,
+     "ppcd": 98,
+     "position": null
+    },
+    {
+     "keyword": "lowest cost trt",
+     "hist_sv": [
+      110,
+      260,
+      110,
+      140,
+      140,
+      140,
+      210,
+      170,
+      170,
+      140,
+      170,
+      140
+     ],
+     "kd": null,
+     "sv": 140,
+     "cpc": 14.38,
+     "ppcd": 1.0,
+     "position": null
+    },
+    {
+     "keyword": "trt price per month",
+     "hist_sv": [
+      50,
+      70,
+      70,
+      70,
+      50,
+      70,
+      110,
+      110,
+      140,
+      110,
+      140,
+      140
+     ],
+     "kd": null,
+     "sv": 140,
+     "cpc": 7.09,
+     "ppcd": 95,
+     "position": null
+    },
+    {
+     "keyword": "trt cost no insurance",
+     "hist_sv": [
+      20,
+      30,
+      40,
+      20,
+      10,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20
+     ],
+     "kd": null,
+     "sv": 20,
+     "cpc": 5.67,
+     "ppcd": 82,
+     "position": null
+    },
+    {
+     "keyword": "trt injection cost",
+     "hist_sv": [
+      320,
+      170,
+      260,
+      260,
+      210,
+      210,
+      210,
+      170,
+      170,
+      140,
+      170,
+      140
+     ],
+     "kd": null,
+     "sv": 140,
+     "cpc": 6.78,
+     "ppcd": 1.0,
+     "position": null
+    },
+    {
+     "keyword": "cost of trt with insurance",
+     "hist_sv": [
+      90,
+      90,
+      70,
+      40,
+      30,
+      30,
+      50,
+      30,
+      40,
+      30,
+      30,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 5.19,
+     "ppcd": 47,
+     "position": null
+    },
+    {
+     "keyword": "average cost of trt without insurance",
+     "hist_sv": [
+      20,
+      30,
+      20,
+      30,
+      20,
+      20,
+      40,
+      20,
+      40,
+      40,
+      30,
+      20
+     ],
+     "kd": null,
+     "sv": 20,
+     "cpc": 6.91,
+     "ppcd": 1.0,
+     "position": null
+    },
+    {
+     "keyword": "defy trt cost",
+     "hist_sv": [
+      40,
+      50,
+      20,
+      30,
+      30,
+      20,
+      20,
+      20,
+      20,
+      20,
+      10,
+      20
+     ],
+     "kd": null,
+     "sv": 20,
+     "cpc": 8.44,
+     "ppcd": 90,
+     "position": null
+    },
+    {
+     "keyword": "limitless male trt cost",
+     "hist_sv": [
+      30,
+      20,
+      10,
+      20,
+      20,
+      20,
+      10,
+      20,
+      10,
+      10,
+      10,
+      20
+     ],
+     "kd": null,
+     "sv": 20,
+     "cpc": 7.15,
+     "ppcd": 82,
+     "position": null
+    },
+    {
+     "keyword": "average trt cost",
+     "hist_sv": [
+      70,
+      50,
+      50,
+      30,
+      40,
+      30,
+      50,
+      50,
+      50,
+      40,
+      40,
+      40
+     ],
+     "kd": null,
+     "sv": 40,
+     "cpc": 9.4,
+     "ppcd": 78,
+     "position": null
+    },
+    {
+     "keyword": "trt health insurance",
+     "hist_sv": [
+      20,
+      10,
+      10,
+      20,
+      20,
+      10,
+      20,
+      30,
+      10,
+      10,
+      10,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 12.92,
+     "ppcd": 59,
+     "position": null
+    },
+    {
+     "keyword": "trt cream cost",
+     "hist_sv": [
+      50,
+      40,
+      90,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30
+     ],
+     "kd": null,
+     "sv": 30,
+     "cpc": 5.44,
+     "ppcd": 1.0,
+     "position": null
+    },
+    {
+     "keyword": "cost of trt monthly",
+     "hist_sv": [
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 5.92,
+     "ppcd": 83,
+     "position": null
+    },
+    {
+     "keyword": "trt replacement cost",
+     "hist_sv": [
+      3600,
+      3600,
+      2900,
+      2400,
+      2400,
+      2400,
+      2900,
+      2400,
+      2900,
+      2400,
+      2400,
+      1900
+     ],
+     "kd": null,
+     "sv": 1900,
+     "cpc": 7.05,
+     "ppcd": 92,
+     "position": null
+    },
+    {
+     "keyword": "hone health trt cost",
+     "hist_sv": [
+      480,
+      320,
+      320,
+      320,
+      320,
+      260,
+      480,
+      480,
+      390,
+      390,
+      480,
+      590
+     ],
+     "kd": null,
+     "sv": 590,
+     "cpc": 8.14,
+     "ppcd": 64,
+     "position": null
+    },
+    {
+     "keyword": "testosterone cost without insurance",
+     "hist_sv": [
+      50,
+      70,
+      110,
+      90,
+      140,
+      110,
+      140,
+      140,
+      170,
+      210,
+      140,
+      140
+     ],
+     "kd": null,
+     "sv": 140,
+     "cpc": 5.05,
+     "ppcd": 85,
+     "position": null
+    },
+    {
+     "keyword": "monthly cost of trt",
+     "hist_sv": [
+      50,
+      70,
+      50,
+      70,
+      50,
+      50,
+      50,
+      70,
+      50,
+      70,
+      50,
+      50
+     ],
+     "kd": null,
+     "sv": 50,
+     "cpc": 6.29,
+     "ppcd": 93,
+     "position": null
+    },
+    {
+     "keyword": "trt average cost",
+     "hist_sv": [
+      30,
+      30,
+      50,
+      40,
+      30,
+      30,
+      30,
+      30,
+      40,
+      20,
+      30,
+      30
+     ],
+     "kd": null,
+     "sv": 30,
+     "cpc": 6.96,
+     "ppcd": 78,
+     "position": null
+    },
+    {
+     "keyword": "trt shots cost",
+     "hist_sv": [
+      40,
+      40,
+      40,
+      40,
+      40,
+      50,
+      70,
+      30,
+      40,
+      30,
+      50,
+      70
+     ],
+     "kd": null,
+     "sv": 70,
+     "cpc": 5.68,
+     "ppcd": 93,
+     "position": null
+    },
+    {
+     "keyword": "peak trt cost",
+     "hist_sv": [
+      0,
+      10,
+      0,
+      10,
+      0,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "kd": null,
+     "sv": 0,
+     "cpc": 0.0,
+     "ppcd": 0.0,
+     "position": null
+    },
+    {
+     "keyword": "titan medical trt cost",
+     "hist_sv": [
+      50,
+      20,
+      40,
+      30,
+      20,
+      30,
+      30,
+      70,
+      50,
+      50,
+      20,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 5.43,
+     "ppcd": 88,
+     "position": null
+    },
+    {
+     "keyword": "trt gel cost",
+     "hist_sv": [
+      50,
+      50,
+      50,
+      40,
+      30,
+      40,
+      40,
+      50,
+      40,
+      30,
+      30,
+      30
+     ],
+     "kd": null,
+     "sv": 30,
+     "cpc": 3.69,
+     "ppcd": 1.0,
+     "position": null
+    },
+    {
+     "keyword": "trt melbourne cost",
+     "hist_sv": [
+      20,
+      20,
+      20,
+      30,
+      20,
+      20,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 1.02,
+     "ppcd": 43,
+     "position": null
+    },
+    {
+     "keyword": "aspire rejuvenation trt cost",
+     "hist_sv": [
+      10,
+      20,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 0.0,
+     "ppcd": 56,
+     "position": null
+    },
+    {
+     "keyword": "insurance cover trt",
+     "hist_sv": [
+      110,
+      140,
+      90,
+      110,
+      90,
+      70,
+      90,
+      70,
+      90,
+      90,
+      110,
+      90
+     ],
+     "kd": null,
+     "sv": 90,
+     "cpc": 12.77,
+     "ppcd": 63,
+     "position": null
+    },
+    {
+     "keyword": "average monthly cost of trt",
+     "hist_sv": [
+      30,
+      30,
+      30,
+      20,
+      30,
+      20,
+      20,
+      20,
+      30,
+      30,
+      30,
+      20
+     ],
+     "kd": null,
+     "sv": 20,
+     "cpc": 7.43,
+     "ppcd": 72,
+     "position": null
+    },
+    {
+     "keyword": "primebody trt cost",
+     "hist_sv": [
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      0,
+      0,
+      0,
+      10,
+      0
+     ],
+     "kd": null,
+     "sv": 0,
+     "cpc": 0.0,
+     "ppcd": 0.0,
+     "position": null
+    },
+    {
+     "keyword": "cost of testosterone",
+     "hist_sv": [
+      1300,
+      2400,
+      1000,
+      880,
+      1000,
+      880,
+      1000,
+      1000,
+      1300,
+      1000,
+      880,
+      720
+     ],
+     "kd": null,
+     "sv": 720,
+     "cpc": 4.4,
+     "ppcd": 90,
+     "position": null
+    },
+    {
+     "keyword": "frontline alternative trt price",
+     "hist_sv": [
+      0,
+      10,
+      10,
+      10,
+      0,
+      0,
+      0,
+      0,
+      10,
+      0,
+      10,
+      0
+     ],
+     "kd": null,
+     "sv": 0,
+     "cpc": 0.0,
+     "ppcd": 0.0,
+     "position": null
+    },
+    {
+     "keyword": "defy trt pricing",
+     "hist_sv": [
+      10,
+      10,
+      10,
+      0,
+      10,
+      10,
+      10,
+      0,
+      10,
+      10,
+      10,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 0.0,
+     "ppcd": 28,
+     "position": null
+    },
+    {
+     "keyword": "price of testosterone injections",
+     "hist_sv": [
+      5400,
+      5400,
+      4400,
+      4400,
+      4400,
+      3600,
+      3600,
+      3600,
+      3600,
+      2900,
+      3600,
+      3600
+     ],
+     "kd": null,
+     "sv": 3600,
+     "cpc": 3.54,
+     "ppcd": 27,
+     "position": null
+    },
+    {
+     "keyword": "insurance trt",
+     "hist_sv": [
+      10,
+      20,
+      10,
+      90,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 7.87,
+     "ppcd": 67,
+     "position": null
+    },
+    {
+     "keyword": "low cost testosterone",
+     "hist_sv": [
+      20,
+      20,
+      30,
+      30,
+      30,
+      30,
+      40,
+      30,
+      40,
+      20,
+      20,
+      20
+     ],
+     "kd": null,
+     "sv": 20,
+     "cpc": 13.12,
+     "ppcd": 99,
+     "position": null
+    },
+    {
+     "keyword": "average cost of trt with insurance",
+     "hist_sv": [
+      20,
+      10,
+      10,
+      20,
+      10,
+      10,
+      20,
+      10,
+      40,
+      20,
+      20,
+      20
+     ],
+     "kd": null,
+     "sv": 20,
+     "cpc": 9.1,
+     "ppcd": 71,
+     "position": null
+    },
+    {
+     "keyword": "cost of testosterone injections without insurance",
+     "hist_sv": [
+      110,
+      70,
+      50,
+      90,
+      50,
+      50,
+      50,
+      50,
+      50,
+      50,
+      40,
+      20
+     ],
+     "kd": null,
+     "sv": 20,
+     "cpc": 7.16,
+     "ppcd": 74,
+     "position": null
+    },
+    {
+     "keyword": "testosterone cost per month",
+     "hist_sv": [
+      140,
+      40,
+      30,
+      70,
+      40,
+      70,
+      90,
+      70,
+      50,
+      50,
+      70,
+      70
+     ],
+     "kd": null,
+     "sv": 70,
+     "cpc": 4.81,
+     "ppcd": 96,
+     "position": null
+    },
+    {
+     "keyword": "cost trt",
+     "hist_sv": [
+      12100,
+      12100,
+      9900,
+      6600,
+      5400,
+      6600,
+      8100,
+      8100,
+      9900,
+      8100,
+      8100,
+      6600
+     ],
+     "kd": null,
+     "sv": 6600,
+     "cpc": 5.94,
+     "ppcd": 64,
+     "position": null
+    },
+    {
+     "keyword": "home trt cost",
+     "hist_sv": [
+      30,
+      10,
+      20,
+      20,
+      20,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      50
+     ],
+     "kd": null,
+     "sv": 50,
+     "cpc": 9.43,
+     "ppcd": 99,
+     "position": null
+    },
+    {
+     "keyword": "balance my hormones trt cost",
+     "hist_sv": [
+      10,
+      20,
+      20,
+      30,
+      20,
+      20,
+      10,
+      40,
+      20,
+      20,
+      10,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 0.0,
+     "ppcd": 49,
+     "position": null
+    },
+    {
+     "keyword": "marek health trt cost reddit",
+     "hist_sv": [
+      50,
+      40,
+      30,
+      20,
+      20,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 0.0,
+     "ppcd": 7,
+     "position": null
+    },
+    {
+     "keyword": "average cost of testosterone",
+     "hist_sv": [
+      40,
+      40,
+      50,
+      40,
+      30,
+      20,
+      30,
+      40,
+      40,
+      40,
+      30,
+      20
+     ],
+     "kd": null,
+     "sv": 20,
+     "cpc": 4.35,
+     "ppcd": 87,
+     "position": null
+    },
+    {
+     "keyword": "cost for testosterone",
+     "hist_sv": [
+      1300,
+      2400,
+      1000,
+      880,
+      1000,
+      880,
+      1000,
+      1000,
+      1300,
+      1000,
+      880,
+      720
+     ],
+     "kd": null,
+     "sv": 720,
+     "cpc": 4.4,
+     "ppcd": 90,
+     "position": null
+    },
+    {
+     "keyword": "cost for testosterone injections",
+     "hist_sv": [
+      1900,
+      2400,
+      2400,
+      1900,
+      2400,
+      1900,
+      2400,
+      1900,
+      2400,
+      1900,
+      1900,
+      1600
+     ],
+     "kd": null,
+     "sv": 1600,
+     "cpc": 5.24,
+     "ppcd": 91,
+     "position": null
+    },
+    {
+     "keyword": "cost of testosterone injections with insurance",
+     "hist_sv": [
+      10,
+      20,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      20
+     ],
+     "kd": null,
+     "sv": 20,
+     "cpc": 2.19,
+     "ppcd": 17,
+     "position": null
+    },
+    {
+     "keyword": "cost of testosterone without insurance",
+     "hist_sv": [
+      10,
+      10,
+      10,
+      20,
+      10,
+      10,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20
+     ],
+     "kd": null,
+     "sv": 20,
+     "cpc": 2.82,
+     "ppcd": 50,
+     "position": null
+    },
+    {
+     "keyword": "cost of trt reddit",
+     "hist_sv": [
+      20,
+      20,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 0.0,
+     "ppcd": 38,
+     "position": null
+    },
+    {
+     "keyword": "cost testosterone",
+     "hist_sv": [
+      1300,
+      2400,
+      1000,
+      880,
+      1000,
+      880,
+      1000,
+      1000,
+      1300,
+      1000,
+      880,
+      720
+     ],
+     "kd": null,
+     "sv": 720,
+     "cpc": 4.4,
+     "ppcd": 90,
+     "position": null
+    },
+    {
+     "keyword": "defy medical testosterone cost",
+     "hist_sv": [
+      10,
+      20,
+      10,
+      20,
+      20,
+      20,
+      20,
+      20,
+      30,
+      20,
+      20,
+      20
+     ],
+     "kd": null,
+     "sv": 20,
+     "cpc": 11.3,
+     "ppcd": 85,
+     "position": null
+    },
+    {
+     "keyword": "defy medical trt cost reddit",
+     "hist_sv": [
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      20,
+      10,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 0.0,
+     "ppcd": 11,
+     "position": null
+    },
+    {
+     "keyword": "defy trt cost reddit",
+     "hist_sv": [
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 0.0,
+     "ppcd": 43,
+     "position": null
+    },
+    {
+     "keyword": "fountain trt price",
+     "hist_sv": [
+      110,
+      90,
+      90,
+      110,
+      70,
+      70,
+      40,
+      40,
+      40,
+      50,
+      50,
+      30
+     ],
+     "kd": null,
+     "sv": 30,
+     "cpc": 8.04,
+     "ppcd": 1.0,
+     "position": null
+    },
+    {
+     "keyword": "marek trt cost",
+     "hist_sv": [
+      20,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      20,
+      10,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 6.36,
+     "ppcd": 89,
+     "position": null
+    },
+    {
+     "keyword": "peak testosterone cost",
+     "hist_sv": [
+      0,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "kd": null,
+     "sv": 0,
+     "cpc": 0.0,
+     "ppcd": 0.0,
+     "position": null
+    },
+    {
+     "keyword": "prescription testosterone injections cost",
+     "hist_sv": [
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      0,
+      0
+     ],
+     "kd": null,
+     "sv": 0,
+     "cpc": 0.0,
+     "ppcd": 0.0,
+     "position": null
+    },
+    {
+     "keyword": "testosterone cost with insurance",
+     "hist_sv": [
+      50,
+      70,
+      110,
+      90,
+      140,
+      110,
+      140,
+      140,
+      170,
+      210,
+      140,
+      140
+     ],
+     "kd": null,
+     "sv": 140,
+     "cpc": 5.05,
+     "ppcd": 85,
+     "position": null
+    },
+    {
+     "keyword": "testosterone shots for men cost",
+     "hist_sv": [
+      40,
+      40,
+      70,
+      90,
+      110,
+      110,
+      70,
+      90,
+      110,
+      110,
+      110,
+      110
+     ],
+     "kd": null,
+     "sv": 110,
+     "cpc": 7.33,
+     "ppcd": 1.0,
+     "position": null
+    },
+    {
+     "keyword": "testosterone test price near me",
+     "hist_sv": [
+      590,
+      590,
+      590,
+      390,
+      320,
+      320,
+      320,
+      260,
+      260,
+      260,
+      260,
+      260
+     ],
+     "kd": null,
+     "sv": 260,
+     "cpc": 0.45,
+     "ppcd": 37,
+     "position": null
+    },
+    {
+     "keyword": "the cost of testosterone injections",
+     "hist_sv": [
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 0.0,
+     "ppcd": 5,
+     "position": null
+    },
+    {
+     "keyword": "trt nhs cost",
+     "hist_sv": [
+      110,
+      110,
+      110,
+      90,
+      70,
+      50,
+      30,
+      20,
+      50,
+      30,
+      30,
+      30
+     ],
+     "kd": null,
+     "sv": 30,
+     "cpc": 0.0,
+     "ppcd": 28,
+     "position": null
+    }
+   ],
+   "autocomplete": [],
+   "questions": [
+    {
+     "keyword": "how much does trt cost in australia",
+     "hist_sv": [
+      110,
+      110,
+      170,
+      170,
+      140,
+      110,
+      210,
+      140,
+      170,
+      110,
+      110,
+      110
+     ],
+     "kd": null,
+     "sv": 110,
+     "cpc": 1.11,
+     "ppcd": 41,
+     "position": null
+    },
+    {
+     "keyword": "how much does trt cost in canada",
+     "hist_sv": [
+      70,
+      70,
+      70,
+      90,
+      70,
+      90,
+      170,
+      140,
+      110,
+      110,
+      90,
+      110
+     ],
+     "kd": null,
+     "sv": 110,
+     "cpc": 2.24,
+     "ppcd": 40,
+     "position": null
+    },
+    {
+     "keyword": "how much does trt cost per month from prime body",
+     "hist_sv": [],
+     "kd": null,
+     "sv": 0,
+     "cpc": 0.0,
+     "ppcd": 0.0,
+     "position": null
+    },
+    {
+     "keyword": "how much is trt cost",
+     "hist_sv": [
+      110,
+      110,
+      140,
+      90,
+      90,
+      110,
+      110,
+      110,
+      110,
+      140,
+      110,
+      90
+     ],
+     "kd": null,
+     "sv": 90,
+     "cpc": 6.28,
+     "ppcd": 81,
+     "position": null
+    },
+    {
+     "keyword": "how much does trt cost",
+     "hist_sv": [
+      6600,
+      6600,
+      4400,
+      3600,
+      3600,
+      3600,
+      4400,
+      3600,
+      4400,
+      3600,
+      3600,
+      3600
+     ],
+     "kd": null,
+     "sv": 3600,
+     "cpc": 5.26,
+     "ppcd": 90,
+     "position": null
+    },
+    {
+     "keyword": "how much does hone trt cost",
+     "hist_sv": [
+      390,
+      320,
+      320,
+      260,
+      260,
+      320,
+      480,
+      480,
+      390,
+      390,
+      390,
+      320
+     ],
+     "kd": null,
+     "sv": 320,
+     "cpc": 5.86,
+     "ppcd": 86,
+     "position": null
+    },
+    {
+     "keyword": "how much does trt cost per year",
+     "hist_sv": [
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+     ],
+     "kd": null,
+     "sv": 10,
+     "cpc": 2.78,
+     "ppcd": 52,
+     "position": null
+    }
+   ],
+   "serp_overview": [],
+   "top_countries_search_volume": [
+    {
+     "country_code": "",
+     "search_volume": 12100
+    },
+    {
+     "country_code": "us",
+     "search_volume": 8100
+    },
+    {
+     "country_code": "gb",
+     "search_volume": 880
+    },
+    {
+     "country_code": "in",
+     "search_volume": 590
+    },
+    {
+     "country_code": "au",
+     "search_volume": 260
+    },
+    {
+     "country_code": "ca",
+     "search_volume": 260
+    },
+    {
+     "country_code": "de",
+     "search_volume": 10
+    },
+    {
+     "country_code": "fr",
+     "search_volume": 10
+    },
+    {
+     "country_code": "it",
+     "search_volume": 10
+    },
+    {
+     "country_code": "jp",
+     "search_volume": 10
+    }
+   ],
+   "bolded_terms": [],
+   "total_results": null,
+   "ads": 0,
+   "serp_features": [],
+   "serps_fetched_at": null,
+   "last_serp_pulled_at": null,
+   "public_share_hash": "nNL0Q71",
+   "enhanced_keyword_metrics": {
+    "broad_ctr": null,
+    "exact_global_search_volume": 880,
+    "exact_local_search_volume": 0,
+    "has_image": 0,
+    "has_map": 0,
+    "has_news": 0,
+    "has_shopping": 0,
+    "has_video": 0,
+    "top_level": 0,
+    "second_level": 0,
+    "third_level": 0,
+    "fourth_level": 0,
+    "fifth_level": 0,
+    "term_id": "102295737",
+    "keyword": "trt cost",
+    "search_volume": 540,
+    "ranking_difficulty": 27,
+    "total_monthly_clicks": 540.0,
+    "percent_mobile_searches": 0.844291115311909,
+    "percent_desktop_searches": 0.155708884688091,
+    "percent_searches_not_clicked": 0.594202898550725,
+    "percent_paid_clicks": 0.07142857,
+    "percent_organic_clicks": 0.9285714,
+    "broad_cost_per_click": 0.0,
+    "phrase_cost_per_click": 0.0,
+    "exact_cost_per_click": 0.0,
+    "broad_monthly_clicks": 0.0,
+    "phrase_monthly_clicks": 0.0,
+    "exact_monthly_clicks": 0.0,
+    "broad_monthly_cost": 0.0,
+    "phrase_monthly_cost": 0.0,
+    "exact_monthly_cost": 0.0,
+    "paid_competitors": 40,
+    "ranking_homepages": 12,
+    "serp_features_csv": "Featured Snippet,People Also Ask",
+    "serp_first_result": "policylab.us",
+    "is_question": 0,
+    "is_not_safe_for_work": 0,
+    "country_code": "",
+    "date": "2026-08-04"
+   }
+  }
+ }
+}

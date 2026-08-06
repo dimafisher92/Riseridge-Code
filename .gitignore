@@ -1,0 +1,6 @@
+.env
+state/prospects/
+state/leads.json
+out/
+__pycache__/
+*.pyc

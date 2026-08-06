@@ -1,0 +1,34 @@
+{
+ "service": "keyword",
+ "path": "/api/v4/brand-signal-score/retrieve",
+ "params": {
+  "domains": "trtnation.com"
+ },
+ "domain": "trtnation.com",
+ "captured_at": "2026-08-05T07:02:21.256873+00:00",
+ "payload": {
+  "results": [
+   {
+    "domain": "trtnation.com",
+    "status": "done",
+    "score": 50.9,
+    "brand_signal_recommendations": {
+     "brand_signal": {
+      "explanation": "The brand signal quantifies branded and navigational search visibility and engagement.",
+      "current_status": "The brand signal score is 50.94, with branded search volume at 8043 and navigational search volume at 8386, indicating moderate visibility.",
+      "recommendations": [
+       "Enhance on-site content targeting branded keywords to improve relevance.",
+       "Optimize meta tags and headers for branded and navigational pages.",
+       "Implement internal linking strategies to boost branded page authority."
+      ]
+     }
+    },
+    "brand_signal_score_processing_status": "done",
+    "total_processed": 0
+   }
+  ],
+  "total_requested": 1,
+  "total_found": 1,
+  "total_errors": 0
+ }
+}

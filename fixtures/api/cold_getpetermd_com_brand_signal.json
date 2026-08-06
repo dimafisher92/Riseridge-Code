@@ -1,0 +1,34 @@
+{
+ "service": "keyword",
+ "path": "/api/v4/brand-signal-score/retrieve",
+ "params": {
+  "domains": "getpetermd.com"
+ },
+ "domain": "getpetermd.com",
+ "captured_at": "2026-08-05T07:00:51.983531+00:00",
+ "payload": {
+  "results": [
+   {
+    "domain": "getpetermd.com",
+    "status": "done",
+    "score": 49.4,
+    "brand_signal_recommendations": {
+     "brand_signal": {
+      "explanation": "The brand signal quantifies branded and navigational search visibility and engagement.",
+      "current_status": "The brand signal score is 49.39, with branded search volume at 6182 and navigational search volume at 6119, indicating moderate visibility.",
+      "recommendations": [
+       "Enhance on-site content targeting branded keywords to improve relevance.",
+       "Optimize meta tags and headers for branded and navigational terms.",
+       "Create internal links to branded pages to boost visibility."
+      ]
+     }
+    },
+    "brand_signal_score_processing_status": "done",
+    "total_processed": 0
+   }
+  ],
+  "total_requested": 1,
+  "total_found": 1,
+  "total_errors": 0
+ }
+}

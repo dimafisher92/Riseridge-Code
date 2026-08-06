@@ -1,0 +1,41 @@
+<!--SECTION:traffic-->
+<div class="page">
+  <div class="eyebrow">03 &nbsp;/&nbsp; The Numbers</div>
+  <h2>Traffic &amp; Rankings</h2>
+  <div class="stats">
+    <!--TILE:visits-->
+    <div class="stat"><div class="k">Monthly visits</div><div class="v">{{visits}}</div></div>
+    <!--/TILE:visits-->
+    <!--TILE:keyword_count-->
+    <div class="stat"><div class="k">Ranking keywords</div><div class="v">{{keyword_count}}</div></div>
+    <!--/TILE:keyword_count-->
+    <!--TILE:traffic_value-->
+    <div class="stat"><div class="k">Traffic value</div><div class="v">{{traffic_value}}</div></div>
+    <!--/TILE:traffic_value-->
+  </div>
+  <!--TILE:brand_pct-->
+  <h3>Who is actually searching</h3>
+  <p>Separating brand searches &mdash; people who already knew the name &mdash; from
+  problem searches, which are new potential customers:</p>
+  <table>
+    <thead><tr><th>Type of search</th><th>% of traffic</th><th>What this means</th></tr></thead>
+    <tbody>
+      <tr class="self"><td>Brand searches</td><td class="num">{{brand_pct}}</td>
+          <td>Existing awareness converting</td></tr>
+      <tr><td>Problem searches</td><td class="num">{{nonbrand_pct}}</td>
+          <td>New demand captured</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:8.5pt;color:var(--faint)">Measured across the {{brand_split_basis}}.</p>
+  <!--/TILE:brand_pct-->
+  <!--TILE:money_keywords_rows_html-->
+  <h3>The searches that convert, and where you rank today</h3>
+  <table>
+    <thead><tr><th>Keyword</th><th>Searches / month</th><th>Current position</th></tr></thead>
+    <tbody>{{money_keywords_rows_html}}</tbody>
+  </table>
+  <!--/TILE:money_keywords_rows_html-->
+  {{traffic_close_html}}
+  <div class="page-footer">RiseRidge &nbsp;&middot;&nbsp; AI Search Visibility Audit for {{business_name}} &nbsp;&middot;&nbsp; Confidential</div>
+</div>
+<!--/SECTION:traffic-->

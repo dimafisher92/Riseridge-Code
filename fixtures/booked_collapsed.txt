@@ -1,0 +1,14 @@
+*Appointment booked from the SEO Funnel*
+
+*Client's name:* Pat Owner
+*Email:* <mailto:pat@example.org|pat@example.org>
+
+*Timezone:* America/Denver
+*Manager:* Sergey
+*Funnel:* seo
+
+*Questionnaire:*
+
+*What type of business do you run?:* *Your business website:* <mailto:Info@example.org|Info@example.org>
+
+*How much are you currently spending (or willing to invest) on marketing each month?:* $1,000 - $2,000 per month

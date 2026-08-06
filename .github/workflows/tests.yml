@@ -1,0 +1,56 @@
+name: tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    # Chrome is preinstalled on the GitHub-hosted Windows image, and the PDF
+    # renderer shells out to it. render.CHROME points at the Windows path, so a
+    # Linux runner would skip every PDF test rather than exercise the part of
+    # this pipeline most likely to break silently.
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Confirm the repo is self-contained
+        shell: bash
+        run: |
+          # sa_client used to reach into a sibling directory on one machine.
+          # If that ever comes back, imports fail here rather than in production.
+          python -c "import sa_client, derive, collect, render, leads; print('imports OK from a clean checkout')"
+
+      - name: Run the suite
+        # No secrets are needed: every test is offline. Anything requiring the
+        # live API or the Slack token is guarded by skipif, so a green run here
+        # proves the offline contract, not the integrations.
+        run: python -m pytest -q
+
+      - name: Confirm the font cache is committed, not fetched
+        shell: bash
+        run: |
+          test -s state/fonts.css || { echo "state/fonts.css missing: renders would silently download 18 font files and Chrome would substitute Arial"; exit 1; }
+          grep -q "@font-face" state/fonts.css || { echo "font cache has no @font-face rules"; exit 1; }
+          echo "font cache present: $(wc -c < state/fonts.css) bytes"
+
+      - name: Confirm no secret is committed
+        shell: bash
+        run: |
+          if git grep -nE "xoxb-[0-9]{10,}" -- . ; then
+            echo "A Slack bot token appears in tracked files"; exit 1
+          fi
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo ".env is tracked"; exit 1
+          fi
+          echo "no committed secrets"

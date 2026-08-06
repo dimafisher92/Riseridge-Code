@@ -1,0 +1,267 @@
+{
+ "service": "keyword",
+ "path": "/api/v2/competitor-research/824060/view-more/",
+ "params": {
+  "context": "organic_competitors"
+ },
+ "domain": "getpetermd.com",
+ "captured_at": "2026-08-05T07:00:55.869576+00:00",
+ "payload": {
+  "results": [
+   {
+    "competitor": "petermdportal.com",
+    "competitor_keywords": 64,
+    "competitor_traffic": 6510,
+    "traffic_cost": 46086,
+    "common_keywords": 29,
+    "competition_level": 33.0,
+    "domain_power": 27.0,
+    "domain_rating": 26.0
+   },
+   {
+    "competitor": "peptidepub.com",
+    "competitor_keywords": 481,
+    "competitor_traffic": 42,
+    "traffic_cost": 155,
+    "common_keywords": 7,
+    "competition_level": 12.0,
+    "domain_power": 9.0,
+    "domain_rating": 0.0
+   },
+   {
+    "competitor": "couponsmining.com",
+    "competitor_keywords": 870,
+    "competitor_traffic": 28,
+    "traffic_cost": 287,
+    "common_keywords": 9,
+    "competition_level": 12.0,
+    "domain_power": 33.0,
+    "domain_rating": 55.0
+   },
+   {
+    "competitor": "trtnation.com",
+    "competitor_keywords": 5277,
+    "competitor_traffic": 18940,
+    "traffic_cost": 113701,
+    "common_keywords": 69,
+    "competition_level": 12.0,
+    "domain_power": 46.0,
+    "domain_rating": 25.0
+   },
+   {
+    "competitor": "novagenix.org",
+    "competitor_keywords": 3338,
+    "competitor_traffic": 1101,
+    "traffic_cost": 2247,
+    "common_keywords": 57,
+    "competition_level": 12.0,
+    "domain_power": 36.0,
+    "domain_rating": 25.0
+   },
+   {
+    "competitor": "thehcginstitute.com",
+    "competitor_keywords": 7408,
+    "competitor_traffic": 1322,
+    "traffic_cost": 3280,
+    "common_keywords": 51,
+    "competition_level": 8.0,
+    "domain_power": 34.0,
+    "domain_rating": 53.0
+   },
+   {
+    "competitor": "thehrtclub.com",
+    "competitor_keywords": 8098,
+    "competitor_traffic": 29357,
+    "traffic_cost": 139515,
+    "common_keywords": 119,
+    "competition_level": 8.0,
+    "domain_power": 34.0,
+    "domain_rating": 23.0
+   },
+   {
+    "competitor": "trtkingdom.com",
+    "competitor_keywords": 484,
+    "competitor_traffic": 2005,
+    "traffic_cost": 8773,
+    "common_keywords": 28,
+    "competition_level": 8.0,
+    "domain_power": 25.0,
+    "domain_rating": 13.0
+   },
+   {
+    "competitor": "fullpotentialmen.com",
+    "competitor_keywords": 1331,
+    "competitor_traffic": 2744,
+    "traffic_cost": 6449,
+    "common_keywords": 36,
+    "competition_level": 7.000000000000001,
+    "domain_power": 39.0,
+    "domain_rating": 14.0
+   },
+   {
+    "competitor": "pharmacyrxsolutions.com",
+    "competitor_keywords": 467,
+    "competitor_traffic": 101,
+    "traffic_cost": 259,
+    "common_keywords": 28,
+    "competition_level": 7.000000000000001,
+    "domain_power": 24.0,
+    "domain_rating": 0.0
+   },
+   {
+    "competitor": "lockebio.com",
+    "competitor_keywords": 51,
+    "competitor_traffic": 67,
+    "traffic_cost": 49,
+    "common_keywords": 5,
+    "competition_level": 7.000000000000001,
+    "domain_power": 12.0,
+    "domain_rating": 27.0
+   },
+   {
+    "competitor": "ilexlife.com",
+    "competitor_keywords": 1469,
+    "competitor_traffic": 1098,
+    "traffic_cost": 3262,
+    "common_keywords": 38,
+    "competition_level": 6.0,
+    "domain_power": 0,
+    "domain_rating": 28.0
+   },
+   {
+    "competitor": "upc.edu.pe",
+    "competitor_keywords": 8057,
+    "competitor_traffic": 33777,
+    "traffic_cost": 7020,
+    "common_keywords": 67,
+    "competition_level": 6.0,
+    "domain_power": 64.0,
+    "domain_rating": 71.0
+   },
+   {
+    "competitor": "fyrebody.com",
+    "competitor_keywords": 259,
+    "competitor_traffic": 149,
+    "traffic_cost": 840,
+    "common_keywords": 4,
+    "competition_level": 5.0,
+    "domain_power": 12.0,
+    "domain_rating": 26.0
+   },
+   {
+    "competitor": "gopetermd.com",
+    "competitor_keywords": 56,
+    "competitor_traffic": 48,
+    "traffic_cost": 303,
+    "common_keywords": 10,
+    "competition_level": 5.0,
+    "domain_power": 17.0,
+    "domain_rating": 0.0
+   },
+   {
+    "competitor": "reliablerxpharmacy.com",
+    "competitor_keywords": 10691,
+    "competitor_traffic": 6735,
+    "traffic_cost": 26573,
+    "common_keywords": 42,
+    "competition_level": 5.0,
+    "domain_power": 45.0,
+    "domain_rating": 53.0
+   },
+   {
+    "competitor": "complete.md",
+    "competitor_keywords": 135,
+    "competitor_traffic": 133,
+    "traffic_cost": 46,
+    "common_keywords": 5,
+    "competition_level": 5.0,
+    "domain_power": 15.0,
+    "domain_rating": 4.0
+   },
+   {
+    "competitor": "trtpicks.com",
+    "competitor_keywords": 143,
+    "competitor_traffic": 11,
+    "traffic_cost": 62,
+    "common_keywords": 2,
+    "competition_level": 5.0,
+    "domain_power": 0,
+    "domain_rating": 0.0
+   },
+   {
+    "competitor": "swisschems.is",
+    "competitor_keywords": 2284,
+    "competitor_traffic": 32222,
+    "traffic_cost": 81297,
+    "common_keywords": 41,
+    "competition_level": 4.0,
+    "domain_power": 50.0,
+    "domain_rating": 52.0
+   },
+   {
+    "competitor": "myportal.md",
+    "competitor_keywords": 2095,
+    "competitor_traffic": 2846,
+    "traffic_cost": 4028,
+    "common_keywords": 8,
+    "competition_level": 4.0,
+    "domain_power": 24.0,
+    "domain_rating": 46.0
+   },
+   {
+    "competitor": "scrippslabs.com",
+    "competitor_keywords": 1851,
+    "competitor_traffic": 2128,
+    "traffic_cost": 1936,
+    "common_keywords": 34,
+    "competition_level": 4.0,
+    "domain_power": 0,
+    "domain_rating": 13.0
+   },
+   {
+    "competitor": "alphamd.org",
+    "competitor_keywords": 8293,
+    "competitor_traffic": 3906,
+    "traffic_cost": 10820,
+    "common_keywords": 28,
+    "competition_level": 3.0,
+    "domain_power": 41.0,
+    "domain_rating": 33.0
+   },
+   {
+    "competitor": "henrymeds.com",
+    "competitor_keywords": 5334,
+    "competitor_traffic": 36129,
+    "traffic_cost": 767539,
+    "common_keywords": 22,
+    "competition_level": 3.0,
+    "domain_power": 51.0,
+    "domain_rating": 65.0
+   },
+   {
+    "competitor": "1stoptimal.com",
+    "competitor_keywords": 4202,
+    "competitor_traffic": 937,
+    "traffic_cost": 2747,
+    "common_keywords": 21,
+    "competition_level": 3.0,
+    "domain_power": 21.0,
+    "domain_rating": 17.0
+   },
+   {
+    "competitor": "drg-international.com",
+    "competitor_keywords": 2027,
+    "competitor_traffic": 5095,
+    "traffic_cost": 14199,
+    "common_keywords": 27,
+    "competition_level": 3.0,
+    "domain_power": 39.0,
+    "domain_rating": 30.0
+   }
+  ],
+  "total_count": 1125,
+  "source": "cache",
+  "processing_status": "SUCCESS",
+  "last_processed_at": "2026-08-04T14:15:25.606882+00:00"
+ }
+}

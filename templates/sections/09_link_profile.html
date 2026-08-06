@@ -1,0 +1,34 @@
+<!--SECTION:backlinks-->
+<div class="page">
+  <div class="eyebrow">05 &nbsp;/&nbsp; Authority</div>
+  <h2>The Link Profile</h2>
+  <p>Other sites vouching for {{business_name}} is one of the strongest signals both
+  Google and the AI answer engines use. Here is what that looks like today.</p>
+  <div class="stats">
+    <!--TILE:referring_domains-->
+    <div class="stat"><div class="k">Referring domains</div><div class="v">{{referring_domains}}</div></div>
+    <!--/TILE:referring_domains-->
+    <!--TILE:total_backlinks-->
+    <div class="stat"><div class="k">Total links</div><div class="v">{{total_backlinks}}</div></div>
+    <!--/TILE:total_backlinks-->
+  </div>
+  <div class="scores">
+    <!--TILE:authority-->
+    <div class="score"><div class="k">{{authority_label}}</div><div class="v">{{authority}}</div></div>
+    <!--/TILE:authority-->
+    <!--TILE:trust-->
+    <div class="score"><div class="k">{{trust_label}}</div><div class="v">{{trust}}</div></div>
+    <!--/TILE:trust-->
+  </div>
+  <!--TILE:anchor_rows_html-->
+  <h3>What those links actually say</h3>
+  <table>
+    <thead><tr><th>Anchor text</th><th>Links</th></tr></thead>
+    <tbody>{{anchor_rows_html}}</tbody>
+  </table>
+  <!--/TILE:anchor_rows_html-->
+  <h3>What this means</h3>
+  <ul class="findings">{{link_profile_findings_html}}</ul>
+  <div class="page-footer">RiseRidge &nbsp;&middot;&nbsp; AI Search Visibility Audit for {{business_name}} &nbsp;&middot;&nbsp; Confidential</div>
+</div>
+<!--/SECTION:backlinks-->

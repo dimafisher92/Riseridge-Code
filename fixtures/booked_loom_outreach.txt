@@ -1,0 +1,13 @@
+:date: New Appointment Booked Loom Outreach
+
+Invitee: Alex Sample-Booking
+Email: <mailto:alex.sample@example.com|alex.sample@example.com>
+Phone: +61 400 000 000
+Website: <https://cleanfoods.example.com.au/?srsltid=AfmBOopxq4wlBCxSy_INV6rh3HMu4bXnL-AvrbdUKsrm2vRLgCzSFef->
+Event: Ecom AI SEO Strategic Call
+Time: 2026-08-05T22:30:00.000000Z
+Location: <https://us02web.zoom.us/j/00000000000?pwd=EXAMPLEpwdTOKENvalue.1>
+Company Revenue: $50K – $100K /month
+/
+
+_<https://zapier.com/webintent/edit-zap/375422298?source=slack|Sent by Zapier>_
