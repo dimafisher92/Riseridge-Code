@@ -86,20 +86,20 @@ def _dedupe(rows):
 
 
 def company_queries(company, domain):
+    """Three, not five. Every query is a network round trip on a shared
+    runner, and the marginal query added far less than it cost."""
     return [
         '"%s"' % company,
         "%s reviews" % company,
         "%s news" % company,
-        "%s about company" % company,
-        "%s competitors" % (company,),
     ]
 
 
 def person_queries(person, company):
+    """Two. The first carries the role in its snippet almost every time."""
     return [
         '"%s" "%s"' % (person, company),
         '"%s" linkedin' % person,
-        '"%s" founder OR owner OR director' % person,
     ]
 
 
@@ -124,7 +124,7 @@ def _classify(rows, own_domain):
 
 
 def run(company, domain, person="", *, search=None, fetch=None, limit=8,
-        max_follow=4):
+        max_follow=2):
     """Research the company and the contact. Returns a structured picture.
 
     `max_follow` caps how many result pages are actually requested, so this

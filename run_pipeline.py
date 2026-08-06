@@ -119,6 +119,37 @@ def _stamp():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+# A run killed mid-flight leaves only what it already printed. The first
+# runner-loss produced 45 minutes of silence and no way to tell which stage
+# hung, so every stage announces itself and flushes immediately.
+def progress(stage, detail=""):
+    print("[%s] %-14s %s" % (_stamp(), stage, detail), flush=True)
+
+
+# Per-lead wall-clock budget. Beyond this the optional enrichment stages are
+# skipped rather than allowed to run the job into a runner timeout: a report
+# without the AI section beats no report at all.
+LEAD_BUDGET_SECONDS = 420
+
+
+class _Budget:
+    def __init__(self, seconds=None):
+        # Read at call time, not bound as a default: a default argument
+        # captures the module constant once at import and cannot be adjusted
+        # afterwards, by a test or by anything else.
+        self.seconds = LEAD_BUDGET_SECONDS if seconds is None else seconds
+        self.deadline = time.time() + self.seconds
+
+    def left(self):
+        return self.deadline - time.time()
+
+    def spent(self):
+        return self.seconds - self.left()
+
+    def exhausted(self):
+        return self.left() <= 0
+
+
 def _age_hours(thread_ts, now=None):
     try:
         when = float(thread_ts)
@@ -161,9 +192,12 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
               "started_at": _stamp()}
     outdir = _outdir(lead.domain)
     business_name = business_name_for(lead)
+    budget = _Budget()
+    progress("lead", "start (budget %ds)" % budget.seconds)
 
     # --- evidence -----------------------------------------------------------
     ev_dict, ev = None, None
+    progress("collect", "fetching search data")
     try:
         ev_dict, action = collect.run(lead.domain, business_name,
                                       apply=apply, sa=sa)
@@ -172,11 +206,14 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
         ev.validate()
         result["project_action"] = action
         result["artefacts"]["evidence"] = os.path.join(outdir, "evidence.json")
+        progress("collect", "done (%s, %.0fs)" % (action, budget.spent()))
     except Exception as e:
         result["errors"].append("collect: %s" % e)
+        progress("collect", "FAILED %s" % e)
 
     # --- dossier ------------------------------------------------------------
     dos = None
+    progress("dossier", "crawling site and researching company")
     try:
         dos = dossier_mod.build(lead.domain, business_name=business_name,
                                 contact_name=lead.name,
@@ -186,8 +223,10 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
         with open(path, "w", encoding="utf-8") as fh:
             json.dump(dos, fh, indent=1)
         result["artefacts"]["dossier"] = path
+        progress("dossier", "done (%.0fs)" % budget.spent())
     except Exception as e:
         result["errors"].append("dossier: %s" % e)
+        progress("dossier", "FAILED %s" % e)
 
     # The dossier already fetched and audited the site's pages; carrying that
     # into evidence costs nothing and fills the technical block the spec had to
@@ -201,7 +240,12 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
             result["errors"].append("site_audit: %s" % e)
 
     # --- AI visibility ------------------------------------------------------
-    if probe and ev_dict is not None:
+    if probe and ev_dict is not None and budget.exhausted():
+        result["errors"].append(
+            "aiprobe: skipped, the %ds per-lead budget was already spent on "
+            "collection and the site crawl" % budget.seconds)
+        progress("aiprobe", "SKIPPED (budget spent)")
+    elif probe and ev_dict is not None:
         category = category_for(lead)
         if not category:
             result["errors"].append(
@@ -209,6 +253,7 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
                 "the AI section is omitted rather than probed with a guess"
                 % (lead.business_type or ""))
         else:
+            progress("aiprobe", "measuring answer sources")
             try:
                 # Keyless by default. The provider APIs are used only when keys
                 # are configured: they cost money per question and still are not
@@ -225,6 +270,7 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
                         business_name, lead.domain,
                         vertical=vertical_for(lead), category=category,
                         competitors=rivals)
+                progress("aiprobe", "done (%.0fs)" % budget.spent())
                 if block:
                     ev_dict["ai_visibility"] = block
                     collect.write_evidence(ev_dict)
@@ -252,6 +298,7 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
 
     # --- report -------------------------------------------------------------
     findings = []
+    progress("render", "building the report")
     if ev is not None:
         try:
             findings = narrative.findings_for(ev, business_name)
@@ -283,6 +330,7 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
 
     if dos:
         result["dossier_text"] = dossier_mod.format_dossier(dos)
+    progress("lead", "finished in %.0fs" % budget.spent())
     result["findings"] = [f["headline"] for f in findings]
     result["finished_at"] = _stamp()
     return result

@@ -404,3 +404,52 @@ def test_posting_produces_no_delivered_nowhere_note(monkeypatch):
                               do_post=True, chrome=False, probe=False,
                               max_age_hours=0)
     assert report["notes"] == []
+
+
+# --- surviving a runner that dies -------------------------------------------
+
+def test_every_stage_announces_itself(monkeypatch, capsys):
+    """A runner-loss killed a 45-minute run and left zero logs, so there was no
+    way to tell which stage hung. Every stage must leave a trail."""
+    monkeypatch.setattr(run_pipeline.collect, "run",
+                        lambda *a, **k: (_evidence(), "reused"))
+    monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
+    run_pipeline.process(lead(), probe=False, chrome=False,
+                         fetch=lambda u: (None, ""))
+    out = capsys.readouterr().out
+    for stage in ("collect", "dossier", "render", "lead"):
+        assert stage in out, "%s left no trace in the log" % stage
+
+
+def test_a_failing_stage_says_so_in_the_log(monkeypatch, capsys):
+    monkeypatch.setattr(run_pipeline.collect, "run",
+                        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
+    run_pipeline.process(lead(), probe=False, chrome=False,
+                         fetch=lambda u: (None, ""))
+    assert "FAILED" in capsys.readouterr().out
+
+
+def test_the_probe_is_skipped_once_the_budget_is_spent(monkeypatch, capsys):
+    """A report without the AI section beats a job killed by a runner timeout."""
+    monkeypatch.setattr(run_pipeline.collect, "run",
+                        lambda *a, **k: (_evidence(), "reused"))
+    monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
+    monkeypatch.setattr(run_pipeline, "LEAD_BUDGET_SECONDS", 0)
+    called = []
+    monkeypatch.setattr(run_pipeline.aiprobe, "probe_sources",
+                        lambda *a, **k: called.append(1))
+    r = run_pipeline.process(lead(), chrome=False, fetch=lambda u: (None, ""))
+    assert called == [], "the probe must not run past the budget"
+    assert any("budget" in e for e in r["errors"])
+    assert "SKIPPED" in capsys.readouterr().out
+
+
+def test_the_budget_does_not_skip_anything_when_there_is_time(monkeypatch):
+    monkeypatch.setattr(run_pipeline.collect, "run",
+                        lambda *a, **k: (_evidence(), "reused"))
+    monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
+    called = []
+    monkeypatch.setattr(run_pipeline.aiprobe, "probe_sources",
+                        lambda *a, **k: called.append(1) or None)
+    run_pipeline.process(lead(), chrome=False, fetch=lambda u: (None, ""))
+    assert called == [1]

@@ -47,7 +47,10 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # Was 60. A hung run burned 45 minutes and produced no logs before the
+    # runner died; there is no healthy path anywhere near this long, so
+    # fail fast and leave a diagnosable trail instead.
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@v4
