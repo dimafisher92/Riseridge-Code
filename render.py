@@ -23,6 +23,7 @@ DEFAULT_SECTIONS = [
     "04_scorecard.html",
     "05_ai_visibility.html",
     "06_traffic_rankings.html",
+    "06b_site_audit.html",
     "07_position_buckets.html",
     "08_paid_vs_organic.html",
     "09_link_profile.html",

@@ -316,9 +316,19 @@ def test_domain_is_required():
         dossier.build("")
 
 
-def test_format_dossier_shows_unknowns_and_limits():
+def test_format_dossier_is_slack_mrkdwn_not_a_padded_code_block():
+    """The previous version was aligned columns inside a code fence, which
+    Slack renders as a wall of monospace -- unreadable on a phone."""
     d = build({"https://acme.com/": "<p>Our team of 45 technicians.</p>"})
     text = dossier.format_dossier(d)
-    assert "NOT ESTABLISHED" in text
-    assert "LIMITS" in text
-    assert "45" in text
+    assert "*The business*" in text
+    assert "• *45* staff" in text
+    assert "*Confirm on the call*" in text
+    assert "```" not in text, "a code fence would kill the mrkdwn"
+
+
+def test_format_dossier_links_are_slack_link_syntax():
+    d = build({"https://acme.com/": "<p>hi</p>"}, business_name="Acme")
+    text = dossier.format_dossier(d)
+    assert "<https://acme.com|acme.com>" in text
+    assert "](" not in text, "markdown link syntax does not render in Slack"

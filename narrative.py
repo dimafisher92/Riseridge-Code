@@ -451,6 +451,20 @@ def _source_rows(topics):
     return "".join(out)
 
 
+def _audit_rows(audit):
+    """One row per failing check, worst first. Clean checks are not listed --
+    a client-facing page should lead with what needs doing."""
+    if not audit:
+        return ""
+    import siteaudit
+    out = []
+    for c in siteaudit.headline_issues(audit, limit=8):
+        scope = "%s of %s" % (render.fmt(c["failing"]), render.fmt(c["checked"]))
+        out.append("<tr><td>%s</td><td class='num'>%s</td><td>%s</td></tr>"
+                   % (_esc(c["label"]), scope, _esc(c["detail"])))
+    return "".join(out)
+
+
 def _ai_rows(platforms):
     out = []
     for p in platforms:
@@ -594,6 +608,7 @@ def build_tokens(ev, *, now=None):
     bl = d.get("backlinks") or {}
     paid = d.get("paid") or {}
     sc = d.get("scorecard") or {}
+    audit = d.get("site_audit") or {}
 
     brand = render.fmt(_g(ev, "brand_split.brand_pct"), "pct")
     nonbrand = render.fmt(_g(ev, "brand_split.nonbrand_pct"), "pct")
@@ -604,6 +619,12 @@ def build_tokens(ev, *, now=None):
     rest = found[1:] if found else []
 
     summary_items = [f["summary"] for f in ([lead] + rest)][:4]
+    if audit and audit.get("problem_count"):
+        summary_items = summary_items[:3] + [
+            "The site's own foundations are working against it: %d technical "
+            "checks failed across the pages we examined, including the "
+            "structure AI assistants rely on to understand a page."
+            % audit["problem_count"]]
     plan_1, plan_2, plan_3 = _plan(ev, found)
 
     ai_block = d.get("ai_visibility") or {}
@@ -666,6 +687,22 @@ def build_tokens(ev, *, now=None):
             '<p class="fine">%s</p>' % _esc(ai_block.get("method_note", ""))
             if topics and ai_block.get("method_note") else ""),
         "ai_gap_html": _ai_gap(ev, name),
+
+        # --- website / technical audit ---
+        "audit_pages": render.fmt(audit.get("pages_audited")) if audit else "",
+        "audit_problems": (str(audit.get("problem_count"))
+                           if audit and audit.get("problem_count") else ""),
+        "audit_warnings": (str(audit.get("warning_count"))
+                           if audit and audit.get("warning_count") else ""),
+        "audit_passed": (str(audit.get("passed_count"))
+                         if audit and audit.get("passed_count") else ""),
+        "site_audit_rows_html": _audit_rows(audit),
+        "site_audit_intro_html": (
+            _esc(audit.get("scope_note", "")) if audit else ""),
+        "site_audit_scope_html": _esc(
+            "Structured data is the check to watch: it is how an assistant "
+            "identifies what a page is, rather than inferring it from prose."
+            if audit else ""),
 
         # --- traffic and rankings ---
         "visits": render.fmt(_g(ev, "traffic.monthly_organic_visits"), "k"),

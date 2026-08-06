@@ -19,6 +19,7 @@ SECTION_REQUIREMENTS = {
                          "position_buckets.11-20", "position_buckets.21-50",
                          "position_buckets.51-100"),
     "money_keywords": ("money_keywords",),
+    "site_audit": ("site_audit.checks",),
     "backlinks": ("backlinks.referring_domains", "backlinks.total_backlinks",
                   "backlinks.authority", "backlinks.trust"),
     "paid": ("paid.estimated_monthly_spend_usd", "paid.paid_keywords",

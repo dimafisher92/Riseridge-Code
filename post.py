@@ -219,8 +219,14 @@ class Poster:
 
 
 def _chunk_header(label):
-    return {"dossier": "*Prospect dossier (internal)*\n```\n",
-            "script": "*Sales script (internal)*\n```\n"}.get(label, "")
+    """Prefix for each internal artefact.
+
+    The dossier is Slack mrkdwn and must NOT be fenced -- a code fence would
+    render its bold, bullets and links as literal characters. The script is
+    column-aligned plain text and is fenced so the alignment survives.
+    """
+    return {"dossier": ":mag: *Prospect dossier — internal*\n\n",
+            "script": ":dart: *Sales script — internal*\n```\n"}.get(label, "")
 
 
 def format_plan(plan):

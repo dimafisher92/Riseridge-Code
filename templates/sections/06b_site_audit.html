@@ -1,0 +1,34 @@
+<!--SECTION:site_audit-->
+<div class="page">
+  <div class="eyebrow">05 &nbsp;/&nbsp; The Foundations</div>
+  <h2>Website &amp; Technical Audit</h2>
+  <p>Search engines and AI assistants both read the same thing: the underlying
+  structure of your pages. These are the checks that decide whether a page can
+  rank at all, and whether an assistant can understand it well enough to quote
+  it. {{site_audit_intro_html}}</p>
+
+  <div class="stats">
+    <!--TILE:audit_pages-->
+    <div class="stat"><div class="k">Pages checked</div><div class="v">{{audit_pages}}</div></div>
+    <!--/TILE:audit_pages-->
+    <!--TILE:audit_problems-->
+    <div class="stat"><div class="k">Problems</div><div class="v">{{audit_problems}}</div></div>
+    <!--/TILE:audit_problems-->
+    <!--TILE:audit_warnings-->
+    <div class="stat"><div class="k">Need attention</div><div class="v">{{audit_warnings}}</div></div>
+    <!--/TILE:audit_warnings-->
+    <!--TILE:audit_passed-->
+    <div class="stat"><div class="k">Clean</div><div class="v">{{audit_passed}}</div></div>
+    <!--/TILE:audit_passed-->
+  </div>
+
+  <table>
+    <thead><tr><th>Check</th><th>Affected</th><th>Why it matters</th></tr></thead>
+    <tbody>{{site_audit_rows_html}}</tbody>
+  </table>
+
+  <p class="fine">{{site_audit_scope_html}}</p>
+
+  <div class="page-footer">RiseRidge &nbsp;&middot;&nbsp; AI Search Visibility Audit for {{business_name}} &nbsp;&middot;&nbsp; Confidential</div>
+</div>
+<!--/SECTION:site_audit-->

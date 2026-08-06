@@ -189,6 +189,17 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
     except Exception as e:
         result["errors"].append("dossier: %s" % e)
 
+    # The dossier already fetched and audited the site's pages; carrying that
+    # into evidence costs nothing and fills the technical block the spec had to
+    # leave null for want of a crawl budget.
+    if dos and dos.get("site_audit") and ev_dict is not None:
+        ev_dict["site_audit"] = dos["site_audit"]
+        try:
+            collect.write_evidence(ev_dict)
+            ev = evidence_mod.Evidence(ev_dict)
+        except Exception as e:
+            result["errors"].append("site_audit: %s" % e)
+
     # --- AI visibility ------------------------------------------------------
     if probe and ev_dict is not None:
         category = category_for(lead)
