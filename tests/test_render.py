@@ -335,6 +335,9 @@ def test_verify_pdf_must_contain_matches_multiword_phrase_with_spaces(tmp_path):
 
 
 def test_html_to_pdf_raises_when_chrome_missing(tmp_path, monkeypatch):
+    # RR_CHROME takes precedence over the module default, so a runner that sets
+    # it would otherwise mask the missing-binary guard this test exists to pin.
+    monkeypatch.delenv(render.CHROME_ENV, raising=False)
     monkeypatch.setattr(render, "CHROME", str(tmp_path / "nope.exe"))
     with pytest.raises(render.RenderError) as exc:
         render.html_to_pdf(str(tmp_path / "x.html"), str(tmp_path / "x.pdf"))

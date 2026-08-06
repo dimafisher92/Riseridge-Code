@@ -56,10 +56,104 @@ is always reused, never re-created.
     python collect.py trtnation.com --name "TRT Nation"              # dry run
     python collect.py getpetermd.com --name PeterMD --apply           # may create a paid project
 
-## Not yet built (Phase 2b/2c)
+## Phase 2b/2c (built) — automation
 
-`aiprobe.py`, `dossier.py`, `pricing.py`, `post.py`, and the remaining eight
-report sections.
+A booked lead in `#sales-pipeline` becomes three artefacts without an operator
+present.
+
+    python run_pipeline.py                       # dry run: no writes at all
+    python run_pipeline.py --review-channel C123  # deliver to an internal channel
+    python run_pipeline.py --post --apply         # armed (see the two switches)
+
+- `dossier.py` company scale from the prospect's own public site
+- `aiprobe.py` AI visibility via official provider APIs, with a vertical cache
+- `pricing.py` size class → band → tier, with every signal shown
+- `narrative.py` evidence → the report's full token contract
+- `salesscript.py` the closer's brief, plain text for Slack
+- `post.py` the only module that writes to Slack
+- `run_pipeline.py` the orchestrator
+
+### Three things the automated path does differently from the spec
+
+The spec assumed an operator at a keyboard. Three of its assumptions do not
+survive an unattended runner, and each is handled explicitly rather than
+quietly approximated.
+
+**AI visibility.** The spec drove the operator's logged-in Chrome, because
+consumer app answers are what a prospect's customers actually see. A hosted
+runner has no logged-in browser, so `aiprobe.py` uses the official provider
+APIs with search grounding and records the difference as a caveat in the
+evidence. A failed engine is omitted, never scored zero — "we could not reach
+Perplexity" and "Perplexity never mentions you" look identical in a table and
+mean opposite things.
+
+**The idempotency ledger.** The spec put it in `state/leads.json`. Runners are
+ephemeral so it would not survive, and committing it back would publish
+prospect names, emails and domains to this public repository. The guard is now
+server-side: `conversations.replies` answers "has this bot already replied in
+this thread", which is authoritative even on a fresh runner. The reaction is
+kept as the visible marker for humans scanning the channel.
+
+**Section 3, the judgment section.** The spec is right that it cannot be
+templated. What a rule can do honestly is choose which real finding leads.
+Each candidate carries its own qualifying threshold, and among those that
+clear it a documented editorial order decides — not a score. Scoring them
+0–100 required an exchange rate between "85% of traffic is branded" and "1,530
+keywords just off page one"; there isn't one. A hand- or model-authored
+finding drops into the same slot later.
+
+### The two switches
+
+Both writes are off by default and are independent.
+
+| switch | guards | needs |
+|---|---|---|
+| `--apply` | creating a Site Explorer project (paid quota) | the flag |
+| `--post` | writing into a prospect's Slack thread | the flag **and** `RR_POSTING_ARMED` |
+
+Posting needs two switches to agree because the failure mode is
+unrecoverable: a wrong message in a prospect's thread cannot be unsent.
+Creating a project is recoverable and was authorised per booked prospect, so
+it needs only the one flag.
+
+**Scheduled runs pass `--apply`; a manual dispatch has to opt in.** Traffic,
+traffic value, authority, trust, position buckets and competitors are all
+warm-only metrics, so without a project a first-time prospect's report drops
+most of its credibility figures. `collect.py` bounds the spend: one project
+per unique normalised domain, and an existing project — found by search or
+read back from a prior evidence file — is always reused.
+
+### This repository is public
+
+That constrains where prospect data may go, and the pipeline is built around
+it:
+
+- The run log is **redacted by default**. Names, emails and domains are
+  replaced by a stable `<prospect:xxxxxxxx>` tag. `--reveal` is for a local
+  machine only.
+- The pipeline workflow uploads **no build artifact**. Artifacts on a public
+  repository are downloadable by anyone with the run URL, and
+  `state/prospects/` holds real prospect data.
+- Until posting is armed, artefacts are delivered to an internal Slack channel
+  (`--review-channel` / `RR_REVIEW_CHANNEL`). Slack is the only private
+  channel available to a public-repo runner.
+
+`state/prospects/` and `state/verticals/` stay git-ignored.
+
+### Scheduling
+
+`.github/workflows/pipeline.yml` polls hourly on `windows-latest`. Polling
+rather than a webhook: a webhook needs a public endpoint to receive Slack's
+callback and there isn't one, while the bot already has `channels:history`.
+Windows for the same reason as the test workflow — the renderer shells out to
+Chrome. `RR_CHROME` and `RR_CHROME_FLAGS` override the Chrome path if the
+pipeline is ever moved to a Linux runner.
+
+### Arming it
+
+1. Run the workflow by hand with posting off and `RR_REVIEW_CHANNEL` set.
+2. Read all three artefacts in that channel.
+3. Only then set `RR_POSTING_ARMED` and dispatch with `post: true`.
 
 ## Constraints
 

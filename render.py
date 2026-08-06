@@ -160,6 +160,20 @@ def build_html(ev, tokens, section_files=None):
 import subprocess
 
 CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+# The default is the operator's Windows install, and CI runs on Windows for the
+# same reason. Both are overridable so the same renderer works on a Linux
+# runner: RR_CHROME points at the binary, RR_CHROME_FLAGS adds flags such as
+# --no-sandbox, which Chrome requires when it runs as root in a container.
+CHROME_ENV = "RR_CHROME"
+CHROME_FLAGS_ENV = "RR_CHROME_FLAGS"
+
+
+def chrome_path():
+    return os.environ.get(CHROME_ENV) or CHROME
+
+
+def chrome_extra_flags():
+    return [f for f in os.environ.get(CHROME_FLAGS_ENV, "").split() if f]
 # The brand families. Chrome only embeds a font a page actually USES, so a
 # partial render legitimately lacks one of these -- requiring all three would
 # fail a cover-only render that has no monospace text. The real failure mode is
@@ -175,11 +189,13 @@ def html_to_pdf(html_path, pdf_path):
     """Print HTML to PDF with headless Chrome. Flag set is load-bearing:
     --no-pdf-header-footer removes Chrome's URL/date furniture, --no-margins
     lets @page own the geometry."""
-    if not os.path.exists(CHROME):
-        raise RenderError("Chrome not found at %s" % CHROME)
+    binary = chrome_path()
+    if not os.path.exists(binary):
+        raise RenderError("Chrome not found at %s" % binary)
     cmd = [
-        CHROME, "--headless=new", "--disable-gpu",
+        binary, "--headless=new", "--disable-gpu",
         "--no-pdf-header-footer", "--no-margins",
+    ] + chrome_extra_flags() + [
         "--print-to-pdf=%s" % pdf_path,
         html_path,
     ]
