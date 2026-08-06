@@ -21,7 +21,7 @@ on:
         type: boolean
         default: false
       apply:
-        description: "Allow creating a Site Explorer project (paid quota)"
+        description: "Allow creating a Site Explorer project (paid quota). Scheduled runs always do."
         type: boolean
         default: false
       max_age_hours:
@@ -71,7 +71,17 @@ jobs:
           set -euo pipefail
           ARGS="--max-age-hours ${{ github.event.inputs.max_age_hours || '48' }}"
           if [ "${{ github.event.inputs.post }}" = "true" ]; then ARGS="$ARGS --post"; fi
-          if [ "${{ github.event.inputs.apply }}" = "true" ]; then ARGS="$ARGS --apply"; fi
+          # Scheduled runs always create the Site Explorer project. The
+          # operator authorised exactly this (2026-08-04: one project per
+          # booked prospect), and without it traffic, authority, position
+          # buckets and competitors are all warm-only and absent, which is
+          # most of the report's credibility figures. collect.py bounds it:
+          # one project per unique normalised domain, existing ones reused.
+          # A manual dispatch has to opt in.
+          if [ "${{ github.event_name }}" = "schedule" ] \
+             || [ "${{ github.event.inputs.apply }}" = "true" ]; then
+            ARGS="$ARGS --apply"
+          fi
           echo "run_pipeline.py $ARGS"
           # No --reveal: the run log is redacted, because this log is public.
           python run_pipeline.py $ARGS

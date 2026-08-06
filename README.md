@@ -113,6 +113,15 @@ Both writes are off by default and are independent.
 
 Posting needs two switches to agree because the failure mode is
 unrecoverable: a wrong message in a prospect's thread cannot be unsent.
+Creating a project is recoverable and was authorised per booked prospect, so
+it needs only the one flag.
+
+**Scheduled runs pass `--apply`; a manual dispatch has to opt in.** Traffic,
+traffic value, authority, trust, position buckets and competitors are all
+warm-only metrics, so without a project a first-time prospect's report drops
+most of its credibility figures. `collect.py` bounds the spend: one project
+per unique normalised domain, and an existing project — found by search or
+read back from a prior evidence file — is always reused.
 
 ### This repository is public
 
