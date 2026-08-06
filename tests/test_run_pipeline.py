@@ -352,3 +352,43 @@ def test_format_run_shows_skips_and_errors():
     text = run_pipeline.format_run(report)
     assert "(no domain)" in text
     assert "no resolvable domain" in text
+
+
+# --- the name that goes on the client-facing cover --------------------------
+
+@pytest.mark.parametrize("title,expected", [
+    ("Home | Acme Plumbing", "Acme Plumbing"),
+    ("Acme Plumbing | Denver's Best Plumber", "Acme Plumbing"),
+    ("Acme Plumbing - Home", "Acme Plumbing"),
+    ("Welcome | Acme Plumbing | Official Site", "Acme Plumbing"),
+    ("Acme Plumbing", "Acme Plumbing"),
+    ("Acme Plumbing: Trusted Since 1998", "Acme Plumbing"),
+])
+def test_the_cover_name_is_cleaned_from_the_page_title(title, expected):
+    """The funnel gives a <title> tag, not a company name. Printing it raw puts
+    'Home | Acme Plumbing - Denver's Best Plumber' on the cover of a document
+    the prospect is meant to take seriously."""
+    assert run_pipeline.business_name_for(lead(site_title=title)) == expected
+
+
+def test_a_title_of_only_generic_parts_falls_back_to_the_domain():
+    assert run_pipeline.business_name_for(
+        lead(site_title="Home | Welcome")) == "acme.com"
+
+
+def test_no_title_falls_back_to_the_domain():
+    assert run_pipeline.business_name_for(lead(site_title="")) == "acme.com"
+
+
+def test_the_cleaned_name_reaches_the_report_and_the_thread_summary(monkeypatch):
+    monkeypatch.setattr(run_pipeline.collect, "run",
+                        lambda d, name, **k: (dict(_evidence(),
+                                                   business_name=name), "reused"))
+    monkeypatch.setattr(run_pipeline.collect, "write_evidence", lambda ev, **k: "")
+    l = lead(site_title="Home | Acme Plumbing")
+    r = run_pipeline.process(l, probe=False, chrome=False,
+                             fetch=lambda u: (None, ""))
+    html = open(r["artefacts"]["html"], encoding="utf-8").read()
+    assert "Acme Plumbing" in html
+    assert "Home |" not in html
+    assert "Acme Plumbing" in run_pipeline.summary_for(r, l)

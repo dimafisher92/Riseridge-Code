@@ -78,6 +78,39 @@ def vertical_for(lead):
     return category.replace(" ", "-") if category else ""
 
 
+# Page-title segments that name a page rather than the business. The unfurl
+# title is a <title> tag, so "Home | Acme Plumbing" and "Acme Plumbing -
+# Denver's Best Plumber" are both common, and both print on the audit cover.
+GENERIC_TITLE_PARTS = frozenset({
+    "home", "homepage", "welcome", "index", "official site",
+    "official website", "site", "website", "landing page", "main",
+})
+TITLE_SPLIT = " | "
+
+
+def business_name_for(lead):
+    """A business name fit for the cover of a client-facing report.
+
+    The funnel gives us a page <title>, not a company name. Printing it raw
+    puts "Home | Acme Plumbing - Denver's Best Plumber" on the cover of a
+    document the prospect is meant to take seriously.
+    """
+    raw = (getattr(lead, "site_title", "") or "").strip()
+    if not raw:
+        return getattr(lead, "domain", "") or ""
+    parts = []
+    for chunk in raw.replace("—", "|").replace("–", "|").replace(" - ", "|") \
+                    .replace(":", "|").split("|"):
+        chunk = chunk.strip()
+        if chunk and chunk.lower() not in GENERIC_TITLE_PARTS:
+            parts.append(chunk)
+    if not parts:
+        return getattr(lead, "domain", "") or raw
+    # The company name is normally the shortest surviving segment: the others
+    # are taglines. Ties keep document order, so a leading brand still wins.
+    return min(parts, key=len)
+
+
 def _stamp():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -123,7 +156,7 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
               "thread_ts": lead.thread_ts, "errors": [], "artefacts": {},
               "started_at": _stamp()}
     outdir = _outdir(lead.domain)
-    business_name = lead.site_title or lead.domain
+    business_name = business_name_for(lead)
 
     # --- evidence -----------------------------------------------------------
     ev_dict, ev = None, None
@@ -230,8 +263,7 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
 
 def summary_for(result, lead):
     """The message that accompanies the PDF in the thread."""
-    lines = ["*AI Search Visibility Audit -- %s*" % (lead.site_title or
-                                                     lead.domain),
+    lines = ["*AI Search Visibility Audit -- %s*" % business_name_for(lead),
              "Prepared for the call with %s." % (lead.name or "this lead")]
     if result.get("findings"):
         lines.append("")
@@ -303,7 +335,7 @@ def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
                     pdf_path=r["artefacts"].get("pdf"),
                     dossier_text=r.get("dossier_text", ""),
                     script_text=r.get("script_text", ""),
-                    business_name=lead.site_title or lead.domain)
+                    business_name=business_name_for(lead))
             else:
                 r["posting"] = poster.publish(
                     lead.thread_ts,
@@ -311,7 +343,7 @@ def run(*, pages=1, max_age_hours=48, apply=False, do_post=False, probe=True,
                     pdf_path=r["artefacts"].get("pdf"),
                     dossier_text=r.get("dossier_text", ""),
                     script_text=r.get("script_text", ""),
-                    business_name=lead.site_title or lead.domain)
+                    business_name=business_name_for(lead))
         except Exception as e:
             r["errors"].append("post: %s" % e)
         results.append(r)
