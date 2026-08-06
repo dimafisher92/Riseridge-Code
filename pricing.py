@@ -114,6 +114,14 @@ COMPANY_THRESHOLDS = {
     "location_count": ((10, "large"), (5, "mid"), (2, "small"), (1, "micro")),
 }
 
+# Stated monthly revenue, in dollars. The Loom Outreach funnel captures this
+# instead of a budget, and it is a far better signal than a self-reported
+# budget: it describes the business rather than what someone guessed they
+# might spend. A floor for the same reason headcount is -- it is a fact about
+# the company, not an inference from its website.
+REVENUE_THRESHOLDS = ((250000, "large"), (50000, "mid"), (10000, "small"),
+                      (1, "micro"))
+
 # Ownership structure is a floor too: a franchise or PE-backed group is not a
 # small business regardless of what one location's website looks like.
 OWNERSHIP_FLOOR = {
@@ -166,7 +174,45 @@ def _signal(group, name, value, size_class, kind, note=""):
     }
 
 
-def collect_signals(evidence=None, dossier=None):
+_REVENUE_UNIT = re.compile(r"([\d,.]+)\s*([km])?", re.I)
+
+
+def monthly_revenue(answer):
+    """Stated monthly revenue in dollars, or None.
+
+    Ranges resolve to the LOWER bound. This sets a floor on the size class, so
+    the conservative end is the defensible one: a business saying "$50K - $100K"
+    is being claimed to be at least a $50K/month operation, not at most a $100K
+    one. An annual figure is divided down so both conventions land in the same
+    unit.
+    """
+    if not answer:
+        return None
+    text = str(answer).lower()
+    values = []
+    for raw, unit in _REVENUE_UNIT.findall(text):
+        digits = raw.replace(",", "")
+        if not digits or digits in ("."):
+            continue
+        try:
+            n = float(digits)
+        except ValueError:
+            continue
+        if unit and unit.lower() == "k":
+            n *= 1000
+        elif unit and unit.lower() == "m":
+            n *= 1000000
+        if n >= 100:
+            values.append(n)
+    if not values:
+        return None
+    amount = min(values)
+    if re.search(r"per\s*(?:year|annum)|/\s*(?:yr|year)|annual", text):
+        amount /= 12.0
+    return amount
+
+
+def collect_signals(evidence=None, dossier=None, revenue=""):
     """Every size signal found, each with the class it supports.
 
     A signal whose value could not be established is still returned, with
@@ -179,6 +225,12 @@ def collect_signals(evidence=None, dossier=None):
         v = _dossier_value(dossier, name)
         out.append(_signal("company", name, v, _classify(v, table), "floor",
                            "confirmed company fact; sets a minimum"))
+
+    stated_revenue = monthly_revenue(revenue)
+    out.append(_signal("company", "monthly_revenue_usd", stated_revenue,
+                       _classify(stated_revenue, REVENUE_THRESHOLDS), "floor",
+                       "revenue stated by the prospect; describes the business "
+                       "rather than a guess at what they might spend"))
 
     ownership = _dossier_value(dossier, "ownership")
     own_class = OWNERSHIP_FLOOR.get((ownership or "").strip().lower())
@@ -301,12 +353,12 @@ def upfront_quote(monthly):
 
 
 def recommend(track, *, evidence=None, dossier=None, budget_answer=None,
-              urgency="", currency="USD"):
+              urgency="", currency="USD", revenue=""):
     """A defensible price recommendation with every signal shown."""
     if track not in TRACKS:
         raise PricingError("unknown track: %r" % (track,))
 
-    signals = collect_signals(evidence, dossier)
+    signals = collect_signals(evidence, dossier, revenue)
     size_class, how = size_class_from(signals)
     band = band_for(track, size_class, currency)
     prices = MATRIX[(track, band)]
@@ -352,6 +404,7 @@ def recommend(track, *, evidence=None, dossier=None, budget_answer=None,
                          % (UPFRONT_MONTHS, int(UPFRONT_DISCOUNT * 100)),
         "push_to_dominate": _push_level(urgency, size_class),
         "stated_budget": budget_answer or "",
+        "stated_revenue": revenue or "",
         "budget_ceiling": ceiling,
         "signals": signals,
         "unknown_signals": unknown,

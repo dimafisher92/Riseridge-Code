@@ -46,17 +46,65 @@ def _g(ev, path):
     return ev.get(path) if hasattr(ev, "get") else None
 
 
+# Characters the brand faces can actually render. Everything the report has
+# ever legitimately needed is here; anything outside it is prospect data in a
+# script these fonts do not cover.
+SAFE_CHARS = re.compile(
+    r"^[\x20-\x7e -ſ‐-―‘-”•…€"
+    r"°±×÷™®–—]*$")
+
+TYPOGRAPHIC = {
+    "‘": "'", "’": "'", "“": '"', "”": '"',
+    " ": " ", "‑": "-", "‒": "-", "―": "-",
+}
+
+
+def renderable(text):
+    """Whether every character has a glyph in the brand faces.
+
+    Chrome silently falls back to Arial for a character the embedded fonts do
+    not cover. The embed gate then fails the whole PDF -- correctly, since it
+    cannot tell one stray glyph from a wholesale substitution. So the fix
+    belongs here: never put an unrenderable character on the page.
+    """
+    return bool(SAFE_CHARS.match(_normalise(text or "")))
+
+
+def _normalise(text):
+    for bad, good in TYPOGRAPHIC.items():
+        text = text.replace(bad, good)
+    return text
+
+
+def _names_vendor(text):
+    """Whether prospect data would trip the client-facing vendor gate.
+
+    A backlink anchor or keyword can legitimately contain a word like
+    "majestic". `verify_pdf` sees only extracted text and cannot tell the
+    prospect's own anchor from us naming our tooling, so it fails the render.
+    Dropping the row is the honest resolution: one row lost beats no report,
+    and naming the vendor is not an option.
+    """
+    flat = re.sub(r"\s+", "", (text or "").lower())
+    return any(v in flat for v in render.FORBIDDEN_VENDORS)
+
+
 def rows(items, *cols):
     """Table rows from evidence records. Numeric columns get the num class.
 
     A record whose first column is empty is skipped: the anchors feed contains
     blank-anchor rows, and rendering one puts an empty cell beside a real number
-    in a client-facing table.
+    in a client-facing table. A record that would break the render -- an
+    unrenderable script, or a word that trips the vendor gate -- is skipped for
+    the same reason: it cannot appear, and a missing row beats a missing report.
     """
     out = []
     for it in items:
         label_key = cols[0][0]
-        if not str(it.get(label_key) or "").strip():
+        label = str(it.get(label_key) or "").strip()
+        if not label:
+            continue
+        if not renderable(label) or _names_vendor(label):
             continue
         cells = []
         for key, kind in cols:
@@ -70,8 +118,16 @@ def rows(items, *cols):
 
 
 def _esc(text):
-    return (str(text).replace("&", "&amp;").replace("<", "&lt;")
-            .replace(">", "&gt;"))
+    """HTML-escape, and drop characters the brand faces cannot render.
+
+    The single choke point for prospect-derived text. An uncovered character
+    makes Chrome fall back to Arial for that glyph, which fails the embed gate
+    and costs the whole PDF.
+    """
+    s = _normalise(str(text))
+    if not renderable(s):
+        s = "".join(c for c in s if renderable(c))
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _li(*items):

@@ -54,6 +54,10 @@ CATEGORY_FOR = (
     ("restaurant", "restaurant"),
     ("e-commerce", "online store"),
     ("ecommerce", "online store"),
+    # The Loom funnel names the call "Ecom AI SEO Strategic Call" and
+    # carries no business-type answer at all, so without this every
+    # Loom booking silently lost its AI section.
+    ("ecom", "online store"),
     ("dental", "dentist"),
     ("fitness", "gym"),
     ("automotive", "auto repair shop"),
@@ -227,7 +231,7 @@ def process(lead, *, apply=False, probe=True, sa=None, fetch=None,
         rec = pricing.recommend(
             lead.track or "local", evidence=ev_dict, dossier=dos,
             budget_answer=lead.budget, urgency=lead.urgency,
-            currency="USD")
+            revenue=getattr(lead, "revenue", ""), currency="USD")
         path = os.path.join(outdir, "pricing.json")
         with open(path, "w", encoding="utf-8") as fh:
             json.dump(rec, fh, indent=1)
